@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Gateway - Giriş</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg: #0E0C18;
+            --surface: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #FFFFFF;
+            --text-muted: #7C7A88;
+            --primary: #9D6EF8;
+            --primary-hover: #7C3AED;
+            --radius: 12px;
+            --success: #10B981;
+            --danger: #EF4444;
+            --accent-glow: rgba(157,110,248,0.45);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--text-main);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── AURORA BACKGROUND ── */
+        .aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .aurora-blob {
+            position: absolute; border-radius: 50%;
+            filter: blur(110px); opacity: 0.3;
+            animation: drift 20s ease-in-out infinite alternate;
+        }
+        .a1 { width: 700px; height: 700px; background: #6D28D9; top: -250px; left: -120px; }
+        .a2 { width: 550px; height: 550px; background: #5B21B6; bottom: -180px; right: -120px; animation-delay: -7s; }
+        .a3 { width: 400px; height: 400px; background: #7C3AED; top: 25%; left: 40%; opacity: 0.18; animation-delay: -13s; }
+        @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(50px,35px) scale(1.1); } }
+
+        /* ── LOGIN CONTAINER ── */
+        .login-container {
+            background: var(--surface);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid var(--border);
+            transition: max-width 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-header {
+            padding: 2.5rem 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .login-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+            background: linear-gradient(to right, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .tabs {
+            display: flex;
+            padding: 0 2rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.75rem 0;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab i {
+            width: 18px;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab:hover:not(.active) {
+            color: var(--text-main);
+        }
+
+        .login-form {
+            padding: 0 2rem 2.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+            transition: all 0.2s;
+            color: var(--text-main);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 3px rgba(157, 110, 248, 0.15);
+        }
+
+        .form-control::placeholder {
+            color: #5A5868;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .password-toggle:hover {
+            color: var(--text-main);
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .checkbox-label input {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .forgot-pwd {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .forgot-pwd:hover {
+            color: var(--primary);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.85rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(157, 110, 248, 0.25);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(157, 110, 248, 0.35);
+        }
+
+        .btn-submit:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .captcha-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .captcha-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .captcha-check {
+            width: 24px;
+            height: 24px;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .captcha-right {
+            text-align: right;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .divider {
+            text-align: center;
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: var(--border);
+            z-index: 1;
+        }
+
+        .divider span {
+            background: var(--bg);
+            padding: 0 10px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 2;
+            border-radius: 20px;
+        }
+
+        .social-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-social {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-main);
+            transition: all 0.2s;
+        }
+
+        .btn-social:hover {
+            border-color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .btn-social img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .terms {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .terms a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .login-footer {
+            background: rgba(0, 0, 0, 0.15);
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+
+        .login-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        #errorMsg, #registerErrorMsg {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 8px;
+            border-radius: var(--radius);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        #registerSuccessMsg {
+            color: var(--success);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 8px;
+            border-radius: var(--radius);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Password Strength Rules */
+        .password-rules {
+            margin-top: 0.75rem;
+            margin-bottom: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: var(--radius);
+        }
+
+        .password-rules h4 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            transition: color 0.2s;
+        }
+
+        .rule-item .rule-icon {
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .rule-item.valid {
+            color: var(--success);
+        }
+
+        .rule-item.valid .rule-icon {
+            color: var(--success);
+        }
+
+        .rule-item.invalid .rule-icon {
+            color: var(--text-muted);
+        }
+
+        /* Password strength bar */
+        .password-strength-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: var(--border);
+            margin-top: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .password-strength-bar .bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s, background 0.3s;
+            width: 0%;
+        }
+
+        /* KVKK checkbox */
+        .kvkk-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1.4;
+            margin-bottom: 1.25rem;
+        }
+
+        .kvkk-label input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .kvkk-label .required-star {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        /* View toggle */
+        .view-panel {
+            display: none;
+        }
+
+        .view-panel.active {
+            display: block;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Aurora Arka Plan Efekti -->
+    <div class="aurora">
+        <div class="aurora-blob a1"></div>
+        <div class="aurora-blob a2"></div>
+        <div class="aurora-blob a3"></div>
+    </div>
+
+    <div class="login-container">
+        <div class="login-header">
+            <h1 id="pageTitle">Welcome to GenAI Gateway!</h1>
+            <p id="pageSubtitle">Sign in to continue your secure journey.</p>
+        </div>
+
+        <!-- ========== SIGN IN VIEW ========== -->
+        <div id="signInView" class="view-panel active">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('social')">
+                    <i data-lucide="shield-check"></i> Social Login
+                </div>
+                <div class="tab" onclick="switchTab('email')">
+                    <i data-lucide="mail"></i> Email Link
+                </div>
+            </div>
+
+            <div class="login-form">
+                <div id="errorMsg">Invalid credentials.</div>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <input type="text" id="username" class="form-control" placeholder="E-mail or Username" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="password" class="form-control" placeholder="Password" required>
+                        <i data-lucide="eye" class="password-toggle" onclick="togglePassword('password')"></i>
+                    </div>
+
+                    <div class="options">
+                        <label class="checkbox-label">
+                            <input type="checkbox"> Remember me
+                        </label>
+                        <a href="#" class="forgot-pwd">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Sign In</button>
+                </form>
+
+                <div class="captcha-box" style="margin-top: 1.5rem;">
+                    <div class="captcha-left">
+                        <div class="captcha-check"><i data-lucide="check" style="width:16px;"></i></div>
+                        <span>Başarılı!</span>
+                    </div>
+                    <div class="captcha-right">
+                        <strong style="color:#f97316; font-size:12px;">CLOUDFLARE</strong><br>
+                        <a href="#" style="color:var(--text-muted); text-decoration:none;">Gizlilik</a> • 
+                        <a href="#" style="color:var(--text-muted); text-decoration:none;">Yardım</a>
+                    </div>
+                </div>
+
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <div class="social-buttons">
+                    <button class="btn-social" onclick="oauthLogin('google')">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
+                        Google
+                    </button>
+                    <button class="btn-social" onclick="oauthLogin('github')">
+                        <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+                        GitHub
+                    </button>
+                </div>
+
+                <p class="terms">
+                    By continuing, you agree to our <a href="#">Terms and Conditions</a>.
+                </p>
+            </div>
+
+            <div class="login-footer">
+                Don't have an account? <a onclick="showView('register')">Create account</a>
+            </div>
+        </div>
+
+        <!-- ========== REGISTER VIEW ========== -->
+        <div id="registerView" class="view-panel">
+            <div class="login-form" style="padding-top: 1.5rem;">
+                <div id="registerErrorMsg"></div>
+                <div id="registerSuccessMsg"></div>
+
+                <form id="registerForm">
+                    <!-- Ad Soyad -->
+                    <div class="form-group">
+                        <div class="form-row">
+                            <input type="text" id="regFirstName" class="form-control" placeholder="Firstname" required>
+                            <input type="text" id="regLastName" class="form-control" placeholder="Lastname" required>
+                        </div>
+                    </div>
+
+                    <!-- E-posta -->
+                    <div class="form-group">
+                        <input type="email" id="regEmail" class="form-control" placeholder="E-mail" required>
+                    </div>
+
+                    <!-- Telefon -->
+                    <div class="form-group">
+                        <input type="tel" id="regPhone" class="form-control" placeholder="Phone (optional)">
+                    </div>
+
+                    <!-- Kullanıcı Adı -->
+                    <div class="form-group">
+                        <input type="text" id="regUsername" class="form-control" placeholder="Username" required>
+                    </div>
+
+                    <!-- Şifre -->
+                    <div class="form-group">
+                        <input type="password" id="regPassword" class="form-control" placeholder="Password" required>
+                        <i data-lucide="eye" class="password-toggle" onclick="togglePassword('regPassword')"></i>
+                        <div class="password-strength-bar">
+                            <div class="bar-fill" id="strengthBarFill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Şifre Kuralları -->
+                    <div class="password-rules">
+                        <h4>Enter a password. Must contain:</h4>
+                        <div class="rule-item invalid" id="rule-length">
+                            <span class="rule-icon">✕</span> At least 8 characters
+                        </div>
+                        <div class="rule-item invalid" id="rule-number">
+                            <span class="rule-icon">✕</span> At least 1 number
+                        </div>
+                        <div class="rule-item invalid" id="rule-lower">
+                            <span class="rule-icon">✕</span> At least 1 lowercase letter
+                        </div>
+                        <div class="rule-item invalid" id="rule-upper">
+                            <span class="rule-icon">✕</span> At least 1 uppercase letter
+                        </div>
+                    </div>
+
+                    <!-- KVKK -->
+                    <label class="kvkk-label">
+                        <input type="checkbox" id="kvkkCheckbox" required>
+                        <span>I have read and understood the Information Notice on the Processing of Personal Data. <span class="required-star">*</span></span>
+                    </label>
+
+                    <!-- Kayıt Butonu -->
+                    <button type="submit" class="btn-submit" id="registerBtn" disabled>Sign up and continue</button>
+                </form>
+
+                <div class="captcha-box" style="margin-top: 1.5rem;">
+                    <div class="captcha-left">
+                        <div class="captcha-check"><i data-lucide="check" style="width:16px;"></i></div>
+                        <span>Doğrulanıyor...</span>
+                    </div>
+                    <div class="captcha-right">
+                        <strong style="color:#f97316; font-size:12px;">CLOUDFLARE</strong><br>
+                        <a href="#" style="color:var(--text-muted); text-decoration:none;">Gizlilik</a> • 
+                        <a href="#" style="color:var(--text-muted); text-decoration:none;">Yardım</a>
+                    </div>
+                </div>
+
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <div class="social-buttons">
+                    <button class="btn-social" onclick="oauthLogin('google')">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
+                        Google
+                    </button>
+                    <button class="btn-social" onclick="oauthLogin('github')">
+                        <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+                        GitHub
+                    </button>
+                </div>
+
+                <p class="terms">
+                    By continuing, you agree to our <a href="#">Terms and Conditions</a>.
+                </p>
+            </div>
+
+            <div class="login-footer">
+                Already have an account? <a onclick="showView('login')">Sign in</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+        lucide.createIcons();
+
+        // ─── VIEW TOGGLE ────────────────────────────────────────────
+        function showView(view) {
+            const signIn = document.getElementById('signInView');
+            const register = document.getElementById('registerView');
+            const title = document.getElementById('pageTitle');
+            const subtitle = document.getElementById('pageSubtitle');
+
+            if (view === 'register') {
+                signIn.classList.remove('active');
+                register.classList.add('active');
+                title.textContent = 'Welcome to GenAI Gateway!';
+                subtitle.textContent = 'Sign up to start your secure journey.';
+            } else {
+                register.classList.remove('active');
+                signIn.classList.add('active');
+                title.textContent = 'Welcome to GenAI Gateway!';
+                subtitle.textContent = 'Sign in to continue your secure journey.';
+            }
+            // Re-render icons for new view
+            lucide.createIcons();
+        }
+
+        // ─── TAB SWITCH (login tabs) ────────────────────────────────
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        // ─── PASSWORD TOGGLE ────────────────────────────────────────
+        function togglePassword(inputId) {
+            const pwd = document.getElementById(inputId);
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+            } else {
+                pwd.type = 'password';
+            }
+        }
+
+        // ─── OAUTH LOGIN ────────────────────────────────────────────
+        function oauthLogin(provider) {
+            const width = 500;
+            const height = 600;
+            const left = window.screen.width / 2 - width / 2;
+            const top = window.screen.height / 2 - height / 2;
+            window.open(`${API_BASE}/auth/login/${provider}`, 'OAuth', `width=${width},height=${height},top=${top},left=${left}`);
+        }
+
+        // Listen for OAuth messages from popup
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'oauth_success') {
+                localStorage.setItem('token', event.data.token);
+                localStorage.setItem('role', event.data.role);
+                redirectUser(event.data.role);
+            }
+        });
+
+        // ─── PASSWORD VALIDATION (REGISTER) ─────────────────────────
+        const regPassword = document.getElementById('regPassword');
+        const registerBtn = document.getElementById('registerBtn');
+        const kvkkCheckbox = document.getElementById('kvkkCheckbox');
+        const strengthBarFill = document.getElementById('strengthBarFill');
+
+        const rules = {
+            length: { el: document.getElementById('rule-length'), test: (p) => p.length >= 8 },
+            number: { el: document.getElementById('rule-number'), test: (p) => /\d/.test(p) },
+            lower:  { el: document.getElementById('rule-lower'),  test: (p) => /[a-z]/.test(p) },
+            upper:  { el: document.getElementById('rule-upper'),  test: (p) => /[A-Z]/.test(p) },
+        };
+
+        function validatePassword() {
+            const pwd = regPassword.value;
+            let passedCount = 0;
+
+            for (const key in rules) {
+                const rule = rules[key];
+                const passed = rule.test(pwd);
+                if (passed) {
+                    rule.el.classList.add('valid');
+                    rule.el.classList.remove('invalid');
+                    rule.el.querySelector('.rule-icon').textContent = '✓';
+                    passedCount++;
+                } else {
+                    rule.el.classList.remove('valid');
+                    rule.el.classList.add('invalid');
+                    rule.el.querySelector('.rule-icon').textContent = '✕';
+                }
+            }
+
+            // Strength bar
+            const pct = (passedCount / 4) * 100;
+            strengthBarFill.style.width = pct + '%';
+            if (passedCount <= 1) {
+                strengthBarFill.style.background = '#ef4444';
+            } else if (passedCount <= 2) {
+                strengthBarFill.style.background = '#f97316';
+            } else if (passedCount <= 3) {
+                strengthBarFill.style.background = '#eab308';
+            } else {
+                strengthBarFill.style.background = '#22c55e';
+            }
+
+            updateRegisterButton(passedCount);
+        }
+
+        function updateRegisterButton(passedCount) {
+            if (typeof passedCount === 'undefined') {
+                passedCount = 0;
+                for (const key in rules) {
+                    if (rules[key].test(regPassword.value)) passedCount++;
+                }
+            }
+            registerBtn.disabled = !(passedCount === 4 && kvkkCheckbox.checked);
+        }
+
+        regPassword.addEventListener('input', validatePassword);
+        kvkkCheckbox.addEventListener('change', () => updateRegisterButton());
+
+        // ─── SIGN IN ─────────────────────────────────────────────────
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('.btn-submit');
+            btn.innerHTML = "Signing in...";
+            btn.disabled = true;
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('role', data.role);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('full_name', data.full_name || '');
+                    redirectUser(data.role);
+                } else {
+                    document.getElementById('errorMsg').style.display = 'block';
+                    document.getElementById('errorMsg').innerText = data.detail || 'Invalid credentials';
+                    btn.innerHTML = "Sign In";
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                document.getElementById('errorMsg').style.display = 'block';
+                document.getElementById('errorMsg').innerText = 'Connection error';
+                btn.innerHTML = "Sign In";
+                btn.disabled = false;
+            }
+        });
+
+        // ─── REGISTER ────────────────────────────────────────────────
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('registerBtn');
+            const errMsg = document.getElementById('registerErrorMsg');
+            const successMsg = document.getElementById('registerSuccessMsg');
+            errMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            btn.innerHTML = "Creating account...";
+            btn.disabled = true;
+
+            const firstName = document.getElementById('regFirstName').value.trim();
+            const lastName = document.getElementById('regLastName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const full_name = `${firstName} ${lastName}`.trim();
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, email, phone, full_name })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    successMsg.style.display = 'block';
+                    successMsg.innerText = '✓ Account created! Logging you in...';
+                    btn.innerHTML = "Logging in...";
+
+                    // Otomatik giriş yap
+                    try {
+                        const loginRes = await fetch(`${API_BASE}/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username, password })
+                        });
+                        const loginData = await loginRes.json();
+                        if (loginRes.ok) {
+                            localStorage.setItem('token', loginData.access_token);
+                            localStorage.setItem('role', loginData.role);
+                            localStorage.setItem('username', loginData.username);
+                            localStorage.setItem('full_name', loginData.full_name || '');
+                            setTimeout(() => redirectUser(loginData.role), 800);
+                            return;
+                        }
+                    } catch (loginErr) {
+                        console.error('Auto-login failed:', loginErr);
+                    }
+
+                    // Otomatik giriş başarısız olursa login sayfasına yönlendir
+                    setTimeout(() => {
+                        showView('login');
+                        successMsg.style.display = 'none';
+                    }, 2000);
+                } else {
+                    errMsg.style.display = 'block';
+                    errMsg.innerText = data.detail || 'Registration failed. Please try again.';
+                }
+            } catch (err) {
+                errMsg.style.display = 'block';
+                errMsg.innerText = 'Connection error. Please try again.';
+            }
+
+            btn.innerHTML = "Sign up and continue";
+            updateRegisterButton();
+        });
+
+        // ─── REDIRECT ────────────────────────────────────────────────
+        function redirectUser(role) {
+            if (role === 'super_admin') {
+                window.location.href = '/super_admin.html';
+            } else if (role === 'company_admin') {
+                window.location.href = '/dashboard.html';
+            } else {
+                window.location.href = '/dashboard.html';
+            }
+        }
+    </script>
+</body>
+</html>

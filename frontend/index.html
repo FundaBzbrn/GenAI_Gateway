@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Gateway - Yeni Nesil Güvenlik</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #070b19;
+            --primary: #2d3ff5;
+            --primary-glow: rgba(45, 63, 245, 0.4);
+            --accent: #00d2ff;
+            --accent-glow: rgba(0, 210, 255, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── AURORA BACKGROUND ── */
+        .aurora-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -2;
+            background: var(--bg-dark);
+            overflow: hidden;
+        }
+
+        .aurora-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+
+        .blob-1 {
+            width: 500px; height: 500px;
+            background: var(--primary);
+            top: -100px; left: -100px;
+        }
+
+        .blob-2 {
+            width: 400px; height: 400px;
+            background: var(--accent);
+            bottom: -50px; right: -50px;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            width: 300px; height: 300px;
+            background: #8b5cf6;
+            top: 40%; left: 40%;
+            animation-duration: 25s;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, 30px) scale(1.1); }
+            100% { transform: translate(-30px, 50px) scale(0.9); }
+        }
+
+        /* ── PARTICLES CONTAINER ── */
+        #particles-js {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        /* ── NAVIGATION ── */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 4rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .logo i {
+            color: var(--accent);
+            filter: drop-shadow(0 0 8px var(--accent-glow));
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: #fff;
+            border: 1px solid var(--glass-border);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            background: var(--glass-bg);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+        /* ── MAIN CONTENT ── */
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .badge {
+            background: rgba(45, 63, 245, 0.15);
+            border: 1px solid rgba(45, 63, 245, 0.3);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(5px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .badge .dot {
+            width: 8px; height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #22c55e;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            max-width: 800px;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .cta-btn {
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            color: #fff;
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px var(--primary-glow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px var(--primary-glow);
+        }
+
+        .cta-btn:hover::before {
+            left: 100%;
+        }
+
+        /* ── FEATURES GRID ── */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 4rem auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .feature-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .feature-icon {
+            width: 50px; height: 50px;
+            background: rgba(45, 63, 245, 0.1);
+            border: 1px solid rgba(45, 63, 245, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent);
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        @media (max-width: 900px) {
+            .features { grid-template-columns: 1fr; padding: 0 2rem; }
+            .hero h1 { font-size: 3rem; }
+            nav { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Animasyonlu Arka Planlar -->
+    <div class="aurora-bg">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
+        <div class="aurora-blob blob-3"></div>
+    </div>
+    <div id="particles-js"></div>
+
+    <!-- Üst Menü -->
+    <nav>
+        <div class="logo">
+            <i data-lucide="shield-check"></i>
+            GenAI Gateway
+        </div>
+        <a href="/login.html" class="nav-btn">
+            Sisteme Giriş <i data-lucide="arrow-right" style="width: 18px;"></i>
+        </a>
+    </nav>
+
+    <!-- Ana İçerik (Hero) -->
+    <main class="hero">
+        <div class="badge">
+            <div class="dot"></div> Sistem Aktif & Korumada
+        </div>
+        
+        <h1>Yapay Zeka Altyapınız İçin<br>Yeni Nesil Kalkan</h1>
+        
+        <p>GenAI Gateway; prompt injection, veri sızıntısı ve zararlı içerik üretimini saniyeler içinde engelleyen, LLM modelleriniz ile kullanıcılar arasındaki 3 katmanlı akıllı güvenlik köprüsüdür.</p>
+        
+        <a href="/login.html" class="cta-btn">
+            Sisteme Giriş Yap
+            <i data-lucide="shield"></i>
+        </a>
+
+        <!-- Özellikler (Layers) -->
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="zap"></i></div>
+                <h3>Katman 1: Refleks</h3>
+                <p>Gelişmiş regex ve statik analiz ile PII verilerini (TCKN, Kredi Kartı) ve bilinen zararlı kalıpları anında yakalar.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="brain"></i></div>
+                <h3>Katman 2: Zeka</h3>
+                <p>DeBERTa tabanlı derin öğrenme modeli sayesinde, karmaşık "prompt injection" saldırılarını bağlamsal olarak tespit eder.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="eye"></i></div>
+                <h3>Katman 3: Bilgelik</h3>
+                <p>Bağımsız bir LLM (Yargıç) kullanılarak, sofistike "jailbreak" denemeleri ve kurum politikası ihlalleri engellenir.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        lucide.createIcons();
+
+        // Parçacık Animasyonu (Particle Network) Konfigürasyonu
+        particlesJS('particles-js', {
+          "particles": {
+            "number": { "value": 70, "density": { "enable": true, "value_area": 800 } },
+            "color": { "value": "#ffffff" },
+            "shape": { "type": "circle" },
+            "opacity": { "value": 0.25, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false } },
+            "size": { "value": 3, "random": true, "anim": { "enable": false } },
+            "line_linked": { "enable": true, "distance": 150, "color": "#00d2ff", "opacity": 0.2, "width": 1 },
+            "move": { "enable": true, "speed": 1.5, "direction": "none", "random": true, "straight": false, "out_mode": "out", "bounce": false }
+          },
+          "interactivity": {
+            "detect_on": "canvas",
+            "events": {
+              "onhover": { "enable": true, "mode": "grab" },
+              "onclick": { "enable": true, "mode": "push" },
+              "resize": true
+            },
+            "modes": {
+              "grab": { "distance": 200, "line_linked": { "opacity": 0.5 } },
+              "push": { "particles_nb": 3 }
+            }
+          },
+          "retina_detect": true
+        });
+    </script>
+</body>
+</html>

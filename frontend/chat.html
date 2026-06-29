@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Gateway – Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg: #0E0C18;
+            --bg-sidebar: #13111C;
+            --bg-card: rgba(255,255,255,0.04);
+            --bg-input: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.08);
+            --text: #FFFFFF;
+            --muted: #7C7A88;
+            --accent: #9D6EF8;
+            --accent2: #7C3AED;
+            --accent-glow: rgba(157,110,248,0.45);
+            --success: #10B981;
+            --danger: #EF4444;
+        }
+        [data-theme="light"] {
+            --bg: #F0F2F8;
+            --bg-sidebar: #FFFFFF;
+            --bg-card: rgba(255,255,255,0.92);
+            --bg-input: #FFFFFF;
+            --border: rgba(0,0,0,0.08);
+            --text: #0F0F1A;
+            --muted: #8080A0;
+            --accent: #7C3AED;
+            --accent-glow: rgba(124,58,237,0.22);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            overflow: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* ── AURORA ── */
+        .aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .aurora-blob {
+            position: absolute; border-radius: 50%;
+            filter: blur(110px); opacity: 0.3;
+            animation: drift 20s ease-in-out infinite alternate;
+        }
+        .a1 { width: 700px; height: 700px; background: #6D28D9; top: -250px; left: -120px; }
+        .a2 { width: 550px; height: 550px; background: #5B21B6; bottom: -180px; right: -120px; animation-delay: -7s; }
+        .a3 { width: 400px; height: 400px; background: #7C3AED; top: 25%; left: 40%; opacity: 0.18; animation-delay: -13s; }
+        @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(50px,35px) scale(1.1); } }
+        [data-theme="light"] .aurora-blob { opacity: 0.05; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 256px; flex-shrink: 0;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            padding: 22px 14px;
+            z-index: 10; position: relative;
+            transition: background 0.3s;
+            overflow-y: auto;
+        }
+        .sidebar::-webkit-scrollbar { width: 0; }
+
+        .brand {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 1.1rem; font-weight: 700;
+            margin-bottom: 24px; padding: 0 6px;
+        }
+        .brand-orb {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: radial-gradient(circle at 28% 28%, #E9D5FF, #9D6EF8, #2D1B69);
+            box-shadow: 0 0 14px var(--accent-glow); flex-shrink: 0;
+        }
+
+        .new-chat-btn {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 11px 14px;
+            border-radius: 12px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text); font-family: inherit; font-size: 0.92rem; font-weight: 500;
+            cursor: pointer; margin-bottom: 24px;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .new-chat-btn:hover { background: rgba(157,110,248,0.14); border-color: var(--accent); transform: translateY(-1px); }
+
+        .nav-section-label {
+            font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--muted); padding: 0 8px; margin-bottom: 7px;
+        }
+
+        .nav-list { list-style: none; margin-bottom: 20px; display: flex; flex-direction: column; gap: 1px; }
+        .nav-list a {
+            display: flex; align-items: center; gap: 11px;
+            padding: 9px 11px; border-radius: 10px;
+            color: var(--muted); text-decoration: none;
+            font-size: 0.9rem; transition: background 0.2s, color 0.2s;
+        }
+        .nav-list a:hover { background: var(--bg-card); color: var(--text); }
+        .nav-list a.active { background: rgba(157,110,248,0.1); color: #C4B5FD; border: 1px solid rgba(157,110,248,0.2); }
+
+        /* History items */
+        .history-item {
+            display: flex; align-items: center; gap: 9px;
+            padding: 8px 11px; border-radius: 10px;
+            color: var(--muted); font-size: 0.87rem;
+            cursor: pointer; transition: background 0.2s, color 0.2s;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .history-item:hover { background: var(--bg-card); color: var(--text); }
+        .history-item.active { background: rgba(157,110,248,0.1); color: #C4B5FD; border: 1px solid rgba(157,110,248,0.18); }
+        .history-item i { flex-shrink: 0; }
+
+        .sidebar-spacer { flex: 1; }
+
+        /* ── MAIN ── */
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 1; overflow: hidden; min-width: 0; }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            display: flex; align-items: center; justify-content: flex-end;
+            padding: 18px 32px; flex-shrink: 0;
+        }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .tb-btn {
+            display: flex; align-items: center; gap: 7px;
+            padding: 8px 14px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 20px; color: var(--text);
+            font-family: inherit; font-size: 0.87rem;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .tb-btn:hover { background: rgba(157,110,248,0.14); border-color: var(--accent); }
+        .tb-icon { width: 36px; height: 36px; padding: 0; border-radius: 50%; justify-content: center; }
+
+        /* ── CHAT AREA ── */
+        .chat-area {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; padding: 0 32px 20px;
+            overflow-y: auto; overflow-x: hidden;
+            min-height: 0;
+        }
+
+        /* ── WELCOME ── */
+        .welcome {
+            display: flex; flex-direction: column;
+            align-items: center; text-align: center;
+            width: 100%; max-width: 780px;
+            justify-content: flex-start;
+            padding-top: 24px;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        /* ORB — daha parlak ve büyük */
+        .orb {
+            width: 110px; height: 110px; border-radius: 50%;
+            background: radial-gradient(circle at 28% 24%, #F5F3FF, #C4B5FD 25%, #9D6EF8 55%, #4C1D95);
+            box-shadow:
+                0 0 40px rgba(157,110,248,0.7),
+                0 0 80px rgba(157,110,248,0.35),
+                0 0 160px rgba(124,58,237,0.2);
+            position: relative; margin: 0 auto 32px;
+            animation: levitate 5s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        .orb::after {
+            content: ''; position: absolute;
+            top: 14px; left: 18px;
+            width: 26px; height: 16px;
+            background: rgba(255,255,255,0.55);
+            border-radius: 50%; filter: blur(4px);
+        }
+        .orb::before {
+            content: ''; position: absolute; inset: -8px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(157,110,248,0.25) 0%, transparent 70%);
+            animation: pulse-ring 3s ease-in-out infinite;
+        }
+        @keyframes levitate { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-14px); } }
+        @keyframes pulse-ring {
+            0%,100%{ transform:scale(1); opacity:0.6; }
+            50%{ transform:scale(1.15); opacity:0.2; }
+        }
+
+        .welcome-title {
+            font-size: 2.1rem; font-weight: 500; margin-bottom: 32px;
+            background: linear-gradient(135deg, #fff 35%, #DDD6FE 65%, #C4B5FD);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        [data-theme="light"] .welcome-title {
+            background: linear-gradient(135deg, #1a1a2e 40%, #7C3AED);
+            -webkit-background-clip: text; background-clip: text;
+        }
+
+        /* ── PILLS ── */
+        .pills { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; justify-content: center; }
+        .pill {
+            display: flex; align-items: center; gap: 7px;
+            padding: 9px 18px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 24px; color: var(--muted);
+            font-family: inherit; font-size: 0.88rem;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .pill:hover { background: rgba(157,110,248,0.14); border-color: var(--accent); color: var(--text); }
+
+        /* ── INPUT BOX ── */
+        .input-wrap {
+            width: 100%; max-width: 780px;
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 22px; padding: 16px 18px 12px;
+            backdrop-filter: blur(24px);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+            margin-bottom: 20px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-wrap:focus-within {
+            border-color: rgba(157,110,248,0.55);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.22), 0 0 0 3px rgba(157,110,248,0.13);
+        }
+        .input-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+        .sparkle { color: var(--accent); margin-top: 3px; flex-shrink: 0; }
+        #mainInput {
+            flex: 1; background: none; border: none; outline: none;
+            color: var(--text); font-family: inherit; font-size: 1rem;
+            resize: none; min-height: 52px; max-height: 180px; line-height: 1.5;
+        }
+        #mainInput::placeholder { color: var(--muted); }
+
+        /* Attached files preview */
+        #filePreview {
+            display: none; flex-wrap: wrap; gap: 8px;
+            margin-bottom: 12px; padding: 8px 0;
+            border-top: 1px solid var(--border);
+        }
+        .file-chip {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 10px;
+            background: rgba(157,110,248,0.1); border: 1px solid rgba(157,110,248,0.25);
+            border-radius: 8px; font-size: 0.8rem; color: #C4B5FD;
+        }
+        .file-chip button {
+            background: none; border: none; color: #C4B5FD;
+            cursor: pointer; padding: 0; line-height: 1;
+            opacity: 0.7; font-size: 1rem;
+        }
+        .file-chip button:hover { opacity: 1; }
+
+        .input-bottom {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-top: 10px; border-top: 1px solid var(--border);
+        }
+        .input-actions-left { display: flex; gap: 14px; }
+        .act-btn {
+            display: flex; align-items: center; gap: 6px;
+            background: none; border: none; color: var(--muted);
+            font-family: inherit; font-size: 0.87rem;
+            cursor: pointer; transition: color 0.2s; padding: 0;
+        }
+        .act-btn:hover { color: var(--text); }
+        .act-btn.active { color: var(--accent); }
+        .input-actions-right { display: flex; align-items: center; gap: 8px; }
+        .send-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--accent); border: none; color: #fff;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+        .send-btn:hover { background: var(--accent2); transform: scale(1.08); box-shadow: 0 6px 22px var(--accent-glow); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* ── FEATURE CARDS ── */
+        .feature-cards {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 14px; width: 100%; max-width: 780px;
+        }
+        .f-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 18px; cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.25,0.8,0.25,1);
+        }
+        .f-card:hover { transform: translateY(-3px); border-color: rgba(157,110,248,0.38); box-shadow: 0 10px 28px rgba(0,0,0,0.18); }
+        .f-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 13px; }
+        .f-icon {
+            width: 36px; height: 36px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; color: var(--text);
+        }
+        .f-badge { font-size: 0.7rem; padding: 3px 9px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; color: var(--muted); }
+        .f-card h3 { font-size: 0.93rem; font-weight: 600; margin-bottom: 5px; }
+        .f-card p { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+
+        /* ── MESSAGES ── */
+        .messages-container {
+            display: none; flex-direction: column;
+            width: 100%; max-width: 780px; flex: 1 1 0;
+            overflow-y: auto; gap: 16px; margin-bottom: 18px; padding-right: 4px;
+            min-height: 0;
+        }
+        .messages-container::-webkit-scrollbar { width: 5px; }
+        .messages-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .msg-row { display: flex; gap: 12px; animation: fadeUp 0.3s ease; }
+        .msg-row.user { flex-direction: row-reverse; }
+        @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+        .msg-avatar {
+            width: 33px; height: 33px; border-radius: 50%;
+            background: var(--bg-card); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 0.78rem; font-weight: 600; color: var(--muted);
+        }
+        .msg-avatar.ai {
+            background: radial-gradient(circle at 28% 28%, #E9D5FF, #9D6EF8, #2D1B69);
+            border: none; color: white; box-shadow: 0 0 12px var(--accent-glow);
+        }
+        .msg-bubble {
+            max-width: 75%; padding: 12px 16px; border-radius: 18px;
+            font-size: 0.91rem; line-height: 1.55;
+        }
+        .msg-row.user .msg-bubble { background: var(--accent); color: #fff; border-radius: 18px 18px 4px 18px; }
+        .msg-row.ai .msg-bubble { background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px 18px 18px 4px; color: var(--text); }
+
+        /* File attachment in message */
+        .msg-attachment {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 12px; margin-top: 8px;
+            background: rgba(0,0,0,0.15); border-radius: 10px;
+            font-size: 0.8rem; opacity: 0.85;
+        }
+
+        /* ── STATUS BADGES ── */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 20px;
+            font-size: 0.76rem; font-weight: 600; margin-top: 6px;
+        }
+        .badge-allow  { background: rgba(16,185,129,0.15); color: #34D399; border: 1px solid rgba(16,185,129,0.3); }
+        .badge-block  { background: rgba(239,68,68,0.15);  color: #F87171; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-unsafe { background: rgba(239,68,68,0.15);  color: #F87171; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-dlp    { background: rgba(245,158,11,0.15); color: #FCD34D; border: 1px solid rgba(245,158,11,0.3); }
+        .badge-pending{ background: rgba(99,102,241,0.15); color: #A5B4FC; border: 1px solid rgba(99,102,241,0.3); }
+
+        /* ── TYPING ── */
+        .typing { display: flex; align-items: center; gap: 5px; padding: 4px 0; }
+        .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); animation: blink 1.4s infinite; }
+        .dot:nth-child(2) { animation-delay:0.2s; }
+        .dot:nth-child(3) { animation-delay:0.4s; }
+        @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+        /* ── SEC PANEL ── */
+        .sec-panel {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 10px 16px;
+            display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+            max-width: 780px; width: 100%; margin-bottom: 14px; font-size: 0.8rem;
+        }
+        .sec-layer { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+        .sec-dot { width:7px; height:7px; border-radius:50%; }
+        .sec-dot.on  { background:var(--success); box-shadow:0 0 6px rgba(16,185,129,0.6); }
+        .sec-dot.off { background:var(--danger); }
+
+        /* ── USER ID ── */
+        .userid-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 7px 14px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 20px;
+            font-size: 0.81rem; color: var(--muted); margin-bottom: 14px;
+        }
+        .userid-input {
+            background: none; border: none; outline: none;
+            color: var(--text); font-family: inherit;
+            font-size: 0.81rem; font-weight: 500; width: 110px;
+        }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
+
+        /* ── HIDDEN INPUT ── */
+        #fileInput { display: none; }
+
+        .hidden { display: none !important; }
+
+        /* ── SIDE PANEL (Library & Reports) ── */
+        .side-panel-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(2px); z-index: 100;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .side-panel-overlay.show { opacity: 1; pointer-events: auto; }
+        .side-panel {
+            position: fixed; top: 0; right: -420px; width: 420px; height: 100vh;
+            background: var(--bg-sidebar); border-left: 1px solid var(--border);
+            z-index: 101; padding: 24px; box-shadow: -10px 0 40px rgba(0,0,0,0.3);
+            transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        .side-panel.show { right: 0; }
+        .side-panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+        }
+        .side-panel-title { font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .side-panel-close { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; }
+        .side-panel-close:hover { color: var(--text); }
+        .side-panel-content { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+
+        /* Panel items */
+        .sp-item {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sp-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+        .sp-item-title { font-size: 0.9rem; font-weight: 500; margin-bottom: 4px; color: var(--text); }
+        .sp-item-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+
+        /* Report specific */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px; text-align: center;
+        }
+        .stat-num { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .log-item {
+            background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 10px; padding: 12px; margin-bottom: 10px;
+        }
+        .log-item-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.75rem; color: var(--muted); }
+        .log-item-text { font-size: 0.85rem; color: var(--text); line-height: 1.4; word-break: break-all; }
+        .log-badge { display: inline-block; padding: 2px 6px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: rgba(239,68,68,0.15); color: #F87171; }
+
+        /* ══════════════════════════════════════
+           DLP MODAL — Veri Kaybı Önleme Uyarısı
+           ══════════════════════════════════════ */
+        .dlp-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(8px) saturate(0.7);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+        .dlp-overlay.show { opacity: 1; pointer-events: auto; }
+
+        .dlp-modal {
+            background: var(--bg-sidebar);
+            border: 1px solid rgba(245,158,11,0.35);
+            border-radius: 24px;
+            width: 100%; max-width: 620px;
+            max-height: 88vh;
+            overflow-y: auto;
+            box-shadow:
+                0 0 0 1px rgba(245,158,11,0.12),
+                0 32px 64px rgba(0,0,0,0.55),
+                0 0 80px rgba(245,158,11,0.08);
+            transform: scale(0.94) translateY(10px);
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .dlp-overlay.show .dlp-modal { transform: scale(1) translateY(0); }
+        .dlp-modal::-webkit-scrollbar { width: 4px; }
+        .dlp-modal::-webkit-scrollbar-thumb { background: rgba(245,158,11,0.2); border-radius: 4px; }
+
+        /* Header */
+        .dlp-header {
+            padding: 28px 28px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: flex-start; gap: 16px;
+        }
+        .dlp-icon-wrap {
+            width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.28);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .dlp-icon-wrap::after {
+            content: '';
+            position: absolute; inset: -6px;
+            border-radius: 20px;
+            background: radial-gradient(circle, rgba(245,158,11,0.15) 0%, transparent 70%);
+            animation: dlp-pulse 2.5s ease-in-out infinite;
+        }
+        @keyframes dlp-pulse {
+            0%,100%{ opacity:0.6; transform:scale(1); }
+            50%{ opacity:1; transform:scale(1.06); }
+        }
+        .dlp-header-text { flex: 1; }
+        .dlp-pretitle {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+            text-transform: uppercase; color: #F59E0B;
+            margin-bottom: 5px;
+        }
+        .dlp-title {
+            font-size: 1.22rem; font-weight: 700; color: var(--text);
+            margin-bottom: 6px; line-height: 1.25;
+        }
+        .dlp-subtitle {
+            font-size: 0.85rem; color: var(--muted); line-height: 1.45;
+        }
+
+        /* Body */
+        .dlp-body { padding: 22px 28px; display: flex; flex-direction: column; gap: 16px; }
+
+        /* Entity pills */
+        .dlp-entities-label {
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em;
+            text-transform: uppercase; color: var(--muted); margin-bottom: 9px;
+        }
+        .dlp-entity-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+            background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3);
+            color: #FBBF24; margin: 3px;
+        }
+
+        /* Preview box */
+        .dlp-preview-toggle {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; padding: 11px 16px;
+            background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.18);
+            border-radius: 12px; color: #F59E0B;
+            font-family: inherit; font-size: 0.86rem; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; justify-content: space-between;
+        }
+        .dlp-preview-toggle:hover { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.35); }
+        .dlp-preview-box {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px;
+            font-family: 'Courier New', monospace; font-size: 0.82rem;
+            line-height: 1.6; color: var(--text); display: none;
+            word-break: break-word; max-height: 160px; overflow-y: auto;
+        }
+        .dlp-preview-box .dlp-hit {
+            background: rgba(239,68,68,0.22); color: #FCA5A5;
+            border: 1px solid rgba(239,68,68,0.35);
+            border-radius: 4px; padding: 1px 4px;
+        }
+        .dlp-preview-box .dlp-masked {
+            background: rgba(16,185,129,0.15); color: #6EE7B7;
+            border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 4px; padding: 1px 4px;
+        }
+
+        /* Divider */
+        .dlp-divider {
+            height: 1px; background: var(--border);
+            margin: 4px 0;
+        }
+        .dlp-section-title {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+        }
+
+        /* Action buttons */
+        .dlp-actions-primary { display: flex; flex-direction: column; gap: 10px; }
+        .dlp-btn {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 13px 18px;
+            border-radius: 14px; font-family: inherit;
+            font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+            text-align: left;
+        }
+        .dlp-btn-icon {
+            width: 34px; height: 34px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .dlp-btn-text { flex: 1; }
+        .dlp-btn-label { display: block; font-size: 0.9rem; font-weight: 600; }
+        .dlp-btn-hint { display: block; font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 1px; }
+
+        /* Primary CTA — Mask & Send */
+        .dlp-btn-primary {
+            background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.08));
+            border-color: rgba(16,185,129,0.4); color: #34D399;
+        }
+        .dlp-btn-primary .dlp-btn-icon { background: rgba(16,185,129,0.15); }
+        .dlp-btn-primary:hover { background: rgba(16,185,129,0.22); border-color: rgba(16,185,129,0.6); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16,185,129,0.12); }
+
+        /* Secondary — Edit */
+        .dlp-btn-secondary {
+            background: rgba(157,110,248,0.08);
+            border-color: rgba(157,110,248,0.25); color: #C4B5FD;
+        }
+        .dlp-btn-secondary .dlp-btn-icon { background: rgba(157,110,248,0.12); }
+        .dlp-btn-secondary:hover { background: rgba(157,110,248,0.15); border-color: rgba(157,110,248,0.45); transform: translateY(-1px); }
+
+        /* Ghost — Cancel */
+        .dlp-btn-ghost {
+            background: transparent;
+            border-color: var(--border); color: var(--muted);
+        }
+        .dlp-btn-ghost .dlp-btn-icon { background: var(--bg-card); }
+        .dlp-btn-ghost:hover { background: var(--bg-card); color: var(--text); }
+
+        /* Danger — Justified Send */
+        .dlp-btn-danger {
+            background: rgba(239,68,68,0.07);
+            border-color: rgba(239,68,68,0.22); color: #F87171;
+        }
+        .dlp-btn-danger .dlp-btn-icon { background: rgba(239,68,68,0.1); }
+        .dlp-btn-danger:hover { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.4); }
+
+        /* Manager */
+        .dlp-btn-manager {
+            background: rgba(99,102,241,0.08);
+            border-color: rgba(99,102,241,0.25); color: #A5B4FC;
+        }
+        .dlp-btn-manager .dlp-btn-icon { background: rgba(99,102,241,0.12); }
+        .dlp-btn-manager:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.45); }
+
+        /* Secondary row */
+        .dlp-actions-secondary {
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
+        .dlp-link-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 13px; border-radius: 10px;
+            background: transparent; border: 1px solid var(--border);
+            color: var(--muted); font-family: inherit; font-size: 0.8rem;
+            cursor: pointer; transition: all 0.2s; text-decoration: none;
+        }
+        .dlp-link-btn:hover { background: var(--bg-card); color: var(--text); border-color: rgba(157,110,248,0.3); }
+        .dlp-link-btn.warning { color: #FCD34D; border-color: rgba(245,158,11,0.25); }
+        .dlp-link-btn.warning:hover { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.45); }
+
+        /* Justify textarea */
+        .dlp-justify-wrap {
+            display: none;
+            background: rgba(239,68,68,0.05);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 14px; padding: 16px;
+        }
+        .dlp-justify-wrap.show { display: block; }
+        .dlp-justify-label {
+            font-size: 0.78rem; font-weight: 600; color: #F87171; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .dlp-justify-ta {
+            width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 10px; padding: 10px 12px;
+            color: var(--text); font-family: inherit; font-size: 0.85rem;
+            resize: none; outline: none; min-height: 70px; line-height: 1.5;
+        }
+        .dlp-justify-ta::placeholder { color: var(--muted); }
+        .dlp-justify-ta:focus { border-color: rgba(239,68,68,0.45); }
+        .dlp-justify-send {
+            margin-top: 10px; display: flex; justify-content: flex-end;
+        }
+        .dlp-justify-send button {
+            padding: 8px 18px; border-radius: 10px;
+            background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.35);
+            color: #F87171; font-family: inherit; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .dlp-justify-send button:hover { background: rgba(239,68,68,0.25); }
+
+        /* Footer */
+        .dlp-footer {
+            padding: 16px 28px 24px;
+            border-top: 1px solid var(--border);
+        }
+        .dlp-footer-info {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.75rem; color: var(--muted); line-height: 1.4;
+        }
+
+        /* FP report form */
+        .dlp-fp-wrap {
+            display: none;
+            background: rgba(99,102,241,0.05);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 12px; padding: 14px;
+        }
+        .dlp-fp-wrap.show { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="aurora">
+    <div class="aurora-blob a1"></div>
+    <div class="aurora-blob a2"></div>
+    <div class="aurora-blob a3"></div>
+</div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-orb"></div>
+        GenAI Gateway
+    </div>
+
+    <button class="new-chat-btn" onclick="resetChat()">
+        <i data-lucide="message-square-plus" size="17"></i> Yeni Sohbet
+    </button>
+
+    <div class="nav-section-label">Özellikler</div>
+    <ul class="nav-list">
+        <li><a href="#" class="active"><i data-lucide="message-circle" size="16"></i> Sohbet</a></li>
+        <li><a href="dashboard.html"><i data-lucide="layout-dashboard" size="16"></i> Dashboard</a></li>
+    </ul>
+
+    <div class="nav-section-label">Geçmiş Sohbetler</div>
+    <div id="historyList" style="margin-bottom:20px;">
+        <div class="history-item" style="font-style:italic; font-size:0.82rem;">
+            <i data-lucide="clock" size="14"></i> Henüz sohbet yok
+        </div>
+    </div>
+
+    <div class="nav-section-label">Kütüphane & Arşivler</div>
+    <ul class="nav-list">
+        <li><a href="#" onclick="openLibrary('templates')"><i data-lucide="layout-template" size="16"></i> Prompt Şablonları</a></li>
+        <li><a href="#" onclick="openLibrary('reports')"><i data-lucide="bar-chart-2" size="16"></i> Güvenlik Raporları</a></li>
+        <li><a href="#" onclick="openLibrary('archive')"><i data-lucide="archive" size="16"></i> Arşivlenmiş Sohbetler</a></li>
+    </ul>
+
+    <div class="nav-section-label">Çalışma Alanı</div>
+    <ul class="nav-list">
+        <li><a href="#"><i data-lucide="shield-check" size="16"></i> Güvenlik Analizi</a></li>
+        <li><a href="#"><i data-lucide="zap" size="16"></i> Katman 1 – Regex</a></li>
+        <li><a href="#"><i data-lucide="brain" size="16"></i> Katman 2 – DeBERTa</a></li>
+        <li><a href="#"><i data-lucide="eye" size="16"></i> Katman 3 – LLM Judge</a></li>
+    </ul>
+
+    <div class="sidebar-spacer"></div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+    <!-- Topbar — sadece sağ butonlar -->
+    <header class="topbar">
+        <div class="topbar-right">
+            <button class="tb-btn tb-icon" id="themeBtn" title="Tema Değiştir">
+                <i data-lucide="moon" id="themeIcon"></i>
+            </button>
+            <button class="tb-btn" onclick="window.location.href='dashboard.html'">
+                <i data-lucide="layout-dashboard" size="15"></i> Dashboard
+            </button>
+            <button class="tb-btn" id="logoutTopBtn" style="display:none; color:#EF4444; border-color:rgba(239,68,68,0.3)">
+                <i data-lucide="log-out" size="15"></i> Çıkış
+            </button>
+        </div>
+    </header>
+
+    <!-- Chat Content -->
+    <div class="chat-area">
+
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="welcome">
+            <div class="orb"></div>
+            <h1 class="welcome-title">Yapay Zekayla Sohbete Hazır mısın?</h1>
+
+            <div class="pills">
+                <button class="pill" onclick="fillPrompt('Python\'da list ve tuple farkı nedir?')">
+                    <i data-lucide="code-2" size="14"></i> Python Kodu
+                </button>
+                <button class="pill" onclick="fillPrompt('Makine öğrenmesini kısaca açıkla')">
+                    <i data-lucide="lightbulb" size="14"></i> Beyin Fırtınası
+                </button>
+                <button class="pill" onclick="fillPrompt('Güvenlik testi senaryosu oluştur')">
+                    <i data-lucide="shield" size="14"></i> Güvenlik Testi
+                </button>
+            </div>
+
+            <div class="sec-panel" id="secPanel">
+                <i data-lucide="shield-check" size="14" style="color:var(--accent)"></i>
+                <span style="color:var(--muted); margin-right:6px;">Aktif Katmanlar:</span>
+                <div class="sec-layer"><div class="sec-dot on" id="dot1"></div> Regex</div>
+                <div class="sec-layer"><div class="sec-dot on" id="dot2"></div> DeBERTa</div>
+                <div class="sec-layer"><div class="sec-dot on" id="dot3"></div> LLM Judge</div>
+            </div>
+
+            <div class="userid-pill">
+                <i data-lucide="user" size="13"></i>
+                Kullanıcı: <input class="userid-input" id="userIdInput" placeholder="Kullanıcı adı" value="" onchange="switchUser()">
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages-container" id="messagesContainer"></div>
+
+        <!-- Input Box -->
+        <div class="input-wrap" style="max-width:780px; width:100%">
+            <div class="input-top">
+                <i data-lucide="sparkles" class="sparkle" size="18"></i>
+                <textarea id="mainInput" placeholder="Bir şeyler sor..." rows="2"
+                    onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+            </div>
+
+            <!-- File Preview -->
+            <div id="filePreview"></div>
+
+            <div class="input-bottom">
+                <div class="input-actions-left">
+                    <!-- Dosya Yükleme -->
+                    <button class="act-btn" id="attachBtn" onclick="document.getElementById('fileInput').click()" title="Dosya ekle (PDF, TXT, görsel vb.)">
+                        <i data-lucide="paperclip" size="14"></i> Ekle
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="*/*" onchange="handleFileSelect(event)">
+
+                    <button class="act-btn" onclick="clearHistory()">
+                        <i data-lucide="trash-2" size="14"></i> Temizle
+                    </button>
+                </div>
+                <div class="input-actions-right">
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <i data-lucide="arrow-up" size="18"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Cards (welcome only) -->
+        <div class="feature-cards" id="featureCards">
+            <div class="f-card" onclick="fillPrompt('SQL injection nedir, nasıl korunulur?')">
+                <div class="f-card-top">
+                    <div class="f-icon"><i data-lucide="shield-alert" size="18"></i></div>
+                    <span class="f-badge">Güvenlik</span>
+                </div>
+                <h3>Güvenlik Analizi</h3>
+                <p>Prompt injection ve jailbreak saldırı vektörlerini analiz et.</p>
+            </div>
+            <div class="f-card" onclick="fillPrompt('Makine öğrenmesi modelini nasıl değerlendiririm?')">
+                <div class="f-card-top">
+                    <div class="f-icon"><i data-lucide="brain" size="18"></i></div>
+                    <span class="f-badge">AI/ML</span>
+                </div>
+                <h3>AI Asistanı</h3>
+                <p>Yapay zeka, makine öğrenmesi ve derin öğrenme sorularını cevapla.</p>
+            </div>
+            <div class="f-card" onclick="fillPrompt('FastAPI ile REST API nasıl oluşturulur?')">
+                <div class="f-card-top">
+                    <div class="f-icon"><i data-lucide="code" size="18"></i></div>
+                    <span class="f-badge">Kod Yaz</span>
+                </div>
+                <h3>Geliştirici Asistanı</h3>
+                <p>Temiz, production-ready kod üret ve teknik soruları çöz.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ══════════════════════════════════════════════
+     DLP UYARI MODALI — Veri Kaybı Önleme
+     ══════════════════════════════════════════════ -->
+<div class="dlp-overlay" id="dlpOverlay" role="dialog" aria-modal="true" aria-labelledby="dlpTitle">
+  <div class="dlp-modal" id="dlpModal">
+
+    <!-- Header -->
+    <div class="dlp-header">
+      <div class="dlp-icon-wrap">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="dlp-header-text">
+        <div class="dlp-pretitle">🔒 DLP — Veri Kaybı Önleme Sistemi</div>
+        <div class="dlp-title" id="dlpTitle">Hassas Veri Tespit Edildi</div>
+        <div class="dlp-subtitle" id="dlpSubtitle">
+          İsteğiniz LLM'e iletilmeden önce durduruldu. Tespit edilen veriler aşağıda gösterilmektedir.
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="dlp-body">
+
+      <!-- Tespit edilen veri türleri -->
+      <div>
+        <div class="dlp-entities-label">📍 Tespit Edilen Hassas Veri Türleri</div>
+        <div id="dlpEntityPills"><!-- JS ile doldurulur --></div>
+      </div>
+
+      <!-- Önizleme toggle -->
+      <div>
+        <button class="dlp-preview-toggle" id="dlpPreviewToggle" onclick="toggleDlpPreview()">
+          <span style="display:flex;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Tespit Edilen Verileri Göster
+          </span>
+          <svg id="dlpPreviewChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="dlp-preview-box" id="dlpPreviewBox"><!-- JS ile doldurulur --></div>
+      </div>
+
+      <!-- False Positive bildirimi -->
+      <div>
+        <div class="dlp-fp-wrap" id="dlpFpWrap">
+          <div style="font-size:0.78rem; font-weight:600; color:#A5B4FC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Hatalı Tespit Bildir (False Positive)
+          </div>
+          <textarea class="dlp-justify-ta" id="dlpFpText"
+            placeholder="Tespitin neden hatalı olduğunu açıklayın (örn: bu bir test verisi, sahte ID, şablondaki örnek vb.)..."
+            style="border-color:rgba(99,102,241,0.2); background:rgba(99,102,241,0.04);"
+            rows="2"></textarea>
+          <div class="dlp-justify-send">
+            <button onclick="submitFalsePositive()" style="background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.35); color:#A5B4FC;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              SOC'a Bildir
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="dlp-divider"></div>
+
+      <!-- ANA AKSİYONLAR -->
+      <div class="dlp-section-title">✅ Temel Aksiyonlar</div>
+      <div class="dlp-actions-primary">
+
+        <!-- 1. Otomatik Maskele & Gönder -->
+        <button class="dlp-btn dlp-btn-primary" id="dlpBtnMask" onclick="dlpMaskAndSend()">
+          <div class="dlp-btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="dlp-btn-text">
+            <span class="dlp-btn-label">Otomatik Maskele ve Gönder</span>
+            <span class="dlp-btn-hint">Hassas veriler yıldızlanarak (örn: 1234***89) güvenli biçimde LLM'e iletilir</span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <!-- 2. İstemi Düzenle -->
+        <button class="dlp-btn dlp-btn-secondary" onclick="dlpEditPrompt()">
+          <div class="dlp-btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          <div class="dlp-btn-text">
+            <span class="dlp-btn-label">İstemi Düzenle</span>
+            <span class="dlp-btn-hint">Geri dön ve hassas verileri kendin kaldır</span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <!-- 3. İptal -->
+        <button class="dlp-btn dlp-btn-ghost" onclick="dlpCancel()">
+          <div class="dlp-btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div class="dlp-btn-text">
+            <span class="dlp-btn-label">İşlemi İptal Et</span>
+            <span class="dlp-btn-hint">Bu isteği tamamen sil, bir daha gönderilmez</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="dlp-divider"></div>
+
+      <!-- İSTİSNA YÖNETİMİ -->
+      <div class="dlp-section-title">⚠️ İstisna ve İş Akışı Yönetimi</div>
+      <div class="dlp-actions-primary">
+
+        <!-- 4. Gerekçe ile Gönder -->
+        <button class="dlp-btn dlp-btn-danger" onclick="dlpToggleJustify()">
+          <div class="dlp-btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="dlp-btn-text">
+            <span class="dlp-btn-label">Gerekçe Belirterek Gönder</span>
+            <span class="dlp-btn-hint">Sorumluluğu alarak maskesiz gönderirsiniz · Sistemde 🚩 Red Flag olarak loglanır</span>
+          </div>
+          <svg id="dlpJustifyChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+
+        <!-- Gerekçe textarea -->
+        <div class="dlp-justify-wrap" id="dlpJustifyWrap">
+          <div class="dlp-justify-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+            Bu işlem güvenlik loglarına 🚩 Red Flag olarak kaydedilecek
+          </div>
+          <textarea class="dlp-justify-ta" id="dlpJustifyText"
+            placeholder="Lütfen bu hassas veriyi neden göndermeniz gerektiğini açıklayın (örn: yetkili test prosedürü, müşteri talebi, olay müdahalesi)..."
+            rows="3"></textarea>
+          <div class="dlp-justify-send">
+            <button onclick="dlpJustifiedSend()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Gerekçeyle Gönder
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. Yöneticiden Onay İste -->
+        <button class="dlp-btn dlp-btn-manager" onclick="dlpRequestApproval()">
+          <div class="dlp-btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="dlp-btn-text">
+            <span class="dlp-btn-label">Yöneticiden Onay İste</span>
+            <span class="dlp-btn-hint">İstek Pending durumuna alınır, yöneticinize bildirim gönderilir</span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+      </div>
+
+      <div class="dlp-divider"></div>
+
+      <!-- Şeffaflık linkleri -->
+      <div class="dlp-section-title">ℹ️ Şeffaflık ve Geri Bildirim</div>
+      <div class="dlp-actions-secondary">
+        <a href="#" class="dlp-link-btn" onclick="openDlpPolicy(event)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Kurum Politikasını İncele
+        </a>
+        <button class="dlp-link-btn warning" onclick="dlpToggleFp()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Hatalı Tespit Bildir (False Positive)
+        </button>
+      </div>
+
+    </div><!-- /dlp-body -->
+
+    <!-- Footer -->
+    <div class="dlp-footer">
+      <div class="dlp-footer-info">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Bu uyarı KVKK ve Kurum Güvenlik Politikası kapsamında otomatik olarak oluşturulmuştur. Tüm işlemler audit log'a kaydedilmektedir.</span>
+      </div>
+    </div>
+
+  </div><!-- /dlp-modal -->
+</div><!-- /dlp-overlay -->
+
+<!-- ═══ SIDE PANEL ═══ -->
+<div class="side-panel-overlay" id="spOverlay" onclick="closeSidePanel()"></div>
+<div class="side-panel" id="sidePanel">
+    <div class="side-panel-header">
+        <div class="side-panel-title" id="spTitle">Panel</div>
+        <button class="side-panel-close" onclick="closeSidePanel()"><i data-lucide="x" size="20"></i></button>
+    </div>
+    <div class="side-panel-content" id="spContent">
+        <!-- Dinamik içerik -->
+    </div>
+</div>
+
+<script>
+const API_BASE = '/api/v1';
+let chatHistory = [];
+let welcomeShown = true;
+let attachedFiles = [];
+let sessionHistory = [];   // Tüm sohbet oturumlarının listesi
+
+// ─── INIT ───
+window.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    initTheme();
+    loadUsername();
+    loadConfig();
+    checkAuth();
+    loadSessionHistory();
+});
+
+function loadUsername() {
+    const params = new URLSearchParams(window.location.search);
+    const urlUser = params.get('username');
+    const stored = urlUser || localStorage.getItem('username') || '';
+    document.getElementById('userIdInput').value = stored;
+}
+
+async function checkAuth() {
+    const token = localStorage.getItem('token');
+    const logoutBtn = document.getElementById('logoutTopBtn');
+    if (token && logoutBtn) logoutBtn.style.display = 'flex';
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            window.location.href = '/login.html';
+        };
+    }
+}
+
+async function loadConfig() {
+    try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch(`${API_BASE}/config`, { headers });
+        if (!res.ok) return;
+        const cfg = await res.json();
+        document.getElementById('dot1').className = `sec-dot ${cfg.layer_regex ? 'on' : 'off'}`;
+        document.getElementById('dot2').className = `sec-dot ${cfg.layer_deberta ? 'on' : 'off'}`;
+        document.getElementById('dot3').className = `sec-dot ${cfg.layer_llm ? 'on' : 'off'}`;
+    } catch(e) { console.warn('Config yüklenemedi:', e); }
+}
+
+// ─── THEME ───
+function initTheme() {
+    const t = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    document.getElementById('themeIcon').setAttribute('data-lucide', t === 'light' ? 'sun' : 'moon');
+    lucide.createIcons();
+}
+document.getElementById('themeBtn').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    document.getElementById('themeIcon').setAttribute('data-lucide', next === 'light' ? 'sun' : 'moon');
+    lucide.createIcons();
+});
+
+// ─── FILE UPLOAD ───
+function handleFileSelect(event) {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    files.forEach(file => {
+        attachedFiles.push(file);
+    });
+    renderFilePreview();
+
+    // Reset input so the same file can be selected again
+    event.target.value = '';
+}
+
+function renderFilePreview() {
+    const preview = document.getElementById('filePreview');
+    if (!attachedFiles.length) {
+        preview.style.display = 'none';
+        preview.innerHTML = '';
+        return;
+    }
+    preview.style.display = 'flex';
+    preview.innerHTML = attachedFiles.map((f, i) => `
+        <div class="file-chip">
+            <i data-lucide="${getFileIcon(f.name)}" size="13"></i>
+            <span>${f.name.length > 22 ? f.name.slice(0,20)+'…' : f.name}</span>
+            <span style="opacity:0.6; font-size:0.7rem">(${formatSize(f.size)})</span>
+            <button onclick="removeFile(${i})" title="Kaldır">×</button>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+function removeFile(index) {
+    attachedFiles.splice(index, 1);
+    renderFilePreview();
+}
+
+function getFileIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    const icons = { pdf: 'file-text', txt: 'file-text', doc: 'file-text', docx: 'file-text',
+                    py: 'code', js: 'code', ts: 'code', json: 'braces',
+                    png: 'image', jpg: 'image', jpeg: 'image', gif: 'image',
+                    csv: 'table', xlsx: 'table', xls: 'table', zip: 'archive' };
+    return icons[ext] || 'file';
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1048576) return (bytes/1024).toFixed(1) + 'KB';
+    return (bytes/1048576).toFixed(1) + 'MB';
+}
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+}
+
+function generateTitle(text) {
+    if (!text || text.trim() === '') return 'Yeni Sohbet';
+    
+    const lower = text.toLowerCase();
+    if (lower.includes('def ') || lower.includes('import ') || lower.includes('class ') || lower.includes('function ')) return '💻 Kod Geliştirme';
+    if (lower.includes('select ') || lower.includes('insert ') || lower.includes('update ') || lower.includes('drop ')) return '🗄️ SQL Veritabanı İşlemi';
+    if (lower.includes('unut') || lower.includes('ignore') || lower.includes('sistem')) return '⚠️ Güvenlik/Sistem Sorgusu';
+    if (lower.includes('merhaba') || lower.includes('nasılsın') || lower.includes('selam')) return '👋 Günlük Sohbet';
+    if (text.includes('Dosya eklendi:')) return '📁 Dosya Analizi';
+
+    let clean = text.replace(/[^a-zA-ZğüşıöçĞÜŞİÖÇ\s0-9?.,]/g, ' ').replace(/\s+/g, ' ').trim();
+    let words = clean.split(' ');
+    if (words.length > 4) {
+        return words.slice(0, 4).join(' ') + '...';
+    }
+    return clean || 'Sohbet';
+}
+
+function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function fillPrompt(text) {
+    const ta = document.getElementById('mainInput');
+    ta.value = text;
+    ta.focus();
+    autoResize(ta);
+}
+
+function toggleWelcome(show) {
+    welcomeShown = show;
+    document.getElementById('welcomeScreen').style.display = show ? 'flex' : 'none';
+    document.getElementById('featureCards').style.display = show ? 'grid' : 'none';
+    const mc = document.getElementById('messagesContainer');
+    mc.style.display = show ? 'none' : 'flex';
+}
+
+function resetChat() {
+    // Mevcut sohbeti geçmişe kaydet (zaten kaydedilmişti, güncelle)
+    if (chatHistory.length > 0) {
+        saveCurrentSession(true);
+    }
+    // Yeni oturum için sıfırla
+    currentSessionId = null;
+    chatHistory = [];
+    attachedFiles = [];
+    renderFilePreview();
+    document.getElementById('messagesContainer').innerHTML = '';
+    toggleWelcome(true);
+    loadSessionHistory();
+}
+
+function clearHistory() {
+    chatHistory = [];
+    attachedFiles = [];
+    renderFilePreview();
+    document.getElementById('messagesContainer').innerHTML = '';
+    if (!welcomeShown) toggleWelcome(true);
+}
+
+// ─── SESSION HISTORY ───
+// currentSessionId — aktif oturumun ID'si
+let currentSessionId = null;
+
+function getStorageKey() {
+    const input = document.getElementById('userIdInput');
+    const userId = input ? input.value.trim() || 'anon' : 'anon';
+    return 'chatSessions_' + userId;
+}
+
+function switchUser() {
+    const input = document.getElementById('userIdInput');
+    if (input && input.value.trim()) {
+        localStorage.setItem('lastChatUser', input.value.trim());
+    }
+    currentSessionId = null;
+    chatHistory = [];
+    document.getElementById('messagesContainer').innerHTML = '';
+    if (!welcomeShown) toggleWelcome(true);
+    loadSessionHistory();
+}
+
+function deleteSession(e, id) {
+    e.stopPropagation();
+    let sessions = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
+    sessions = sessions.filter(s => s.id !== id);
+    localStorage.setItem(getStorageKey(), JSON.stringify(sessions));
+    if (currentSessionId === id) {
+        clearHistory(); // Ekranı temizle
+        currentSessionId = null;
+        loadSessionHistory();
+    } else {
+        loadSessionHistory();
+    }
+}
+
+function saveCurrentSession(updateExisting = false) {
+    if (!chatHistory.length) return;
+    const firstMsg = chatHistory.find(m => m.role === 'user');
+    if (!firstMsg) return;
+    const sessions = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
+
+    let summaryText = firstMsg.content.replace(/[^a-zA-ZğüşıöçĞÜŞİÖÇ\s0-9?.,]/g, ' ').replace(/\s+/g, ' ').trim();
+    let summarySnippet = summaryText.length > 50 ? summaryText.substring(0, 50) + '...' : summaryText;
+
+    if (updateExisting && currentSessionId) {
+        // Mevcut oturumu güncelle
+        const idx = sessions.findIndex(s => s.id === currentSessionId);
+        if (idx !== -1) {
+            sessions[idx].messages = [...chatHistory];
+            sessions[idx].date = new Date().toLocaleString('tr-TR');
+            sessions[idx].summary = summarySnippet;
+            localStorage.setItem(getStorageKey(), JSON.stringify(sessions));
+            loadSessionHistory();
+            return;
+        }
+    }
+
+    // Yeni oturum oluştur
+    const newSession = {
+        id: currentSessionId || Date.now(),
+        title: generateTitle(firstMsg.content),
+        summary: summarySnippet,
+        messages: [...chatHistory],
+        date: new Date().toLocaleString('tr-TR')
+    };
+    currentSessionId = newSession.id;
+
+    // Zaten varsa güncelle, yoksa başa ekle
+    const existingIdx = sessions.findIndex(s => s.id === newSession.id);
+    if (existingIdx !== -1) {
+        sessions[existingIdx] = newSession;
+    } else {
+        sessions.unshift(newSession);
+    }
+    if (sessions.length > 20) sessions.pop();
+    localStorage.setItem(getStorageKey(), JSON.stringify(sessions));
+    loadSessionHistory();
+}
+
+function loadSessionHistory() {
+    const sessions = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
+    const list = document.getElementById('historyList');
+    if (!sessions.length) {
+        list.innerHTML = '<div class="history-item" style="font-style:italic;font-size:0.82rem;opacity:0.6;"><i data-lucide="clock" size="14"></i>&nbsp; Henüz sohbet yok</div>';
+        lucide.createIcons();
+        return;
+    }
+    list.innerHTML = sessions.slice(0, 10).map(s => `
+        <div class="history-item ${s.id === currentSessionId ? 'active' : ''}" title="${s.date}" style="padding:8px 12px; display:flex; justify-content:space-between; align-items:center; gap:5px;">
+            <div onclick="loadSession(${s.id})" style="flex:1; display:flex; align-items:center; overflow:hidden;">
+                <i data-lucide="message-circle" size="14" style="margin-right:8px; opacity:0.7;"></i>
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.title}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                <span style="font-size:0.68rem;opacity:0.45;" onclick="loadSession(${s.id})">${s.date.split(' ')[0]}</span>
+                <i data-lucide="trash-2" size="13" style="cursor:pointer; opacity:0.4; color:var(--danger);" onclick="deleteSession(event, ${s.id})" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.4" title="Sil"></i>
+            </div>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+function loadSession(id) {
+    const sessions = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
+    const session = sessions.find(s => s.id === id);
+    if (!session) return;
+
+    currentSessionId = id;
+    chatHistory = session.messages;
+    document.getElementById('messagesContainer').innerHTML = '';
+    toggleWelcome(false);
+    session.messages.forEach(m => {
+        if (m.role === 'user') appendMsg('user', m.content);
+        else appendMsg('ai', m.content);
+    });
+    loadSessionHistory(); // aktif oturumu vurgula
+}
+
+const LIBRARY_CONTENT = {
+    templates: {
+        icon: 'layout-template',
+        title: 'Prompt Şablonları',
+        items: [
+            { label: 'Güvenlik Analizi', prompt: 'Bu kod güvenli mi? Potansiyel açıkları analiz et:' },
+            { label: 'Kod İncelemesi', prompt: 'Aşağıdaki kodu incele, hataları ve iyileştirme önerilerini ver:' },
+            { label: 'SQL Sorgulama', prompt: 'Bu SQL sorgusunda injection açığı var mı?' },
+            { label: 'KVKK Kontrolü', prompt: 'Bu metinde kişisel veri var mı? KVKK açısından değerlendir:' },
+            { label: 'Tehdit Modelleme', prompt: 'Bu sistem için olası tehdit vektörlerini listele:' },
+        ]
+    }
+};
+
+function closeSidePanel() {
+    document.getElementById('spOverlay').classList.remove('show');
+    document.getElementById('sidePanel').classList.remove('show');
+}
+
+async function openLibrary(type) {
+    const titleEl = document.getElementById('spTitle');
+    const contentEl = document.getElementById('spContent');
+    
+    document.getElementById('spOverlay').classList.add('show');
+    document.getElementById('sidePanel').classList.add('show');
+    contentEl.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--muted);"><i data-lucide="loader" class="dot" style="animation: spin 1s linear infinite;"></i> Yükleniyor...</div>';
+    lucide.createIcons();
+
+    if (type === 'archive') {
+        titleEl.innerHTML = '<i data-lucide="archive" size="18"></i> Arşivlenmiş Sohbetler';
+        const sessions = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
+        if (!sessions.length) {
+            contentEl.innerHTML = '<div style="text-align:center; color:var(--muted); padding:20px;">Henüz arşivlenmiş sohbet bulunmuyor.</div>';
+            return;
+        }
+        contentEl.innerHTML = sessions.map(s => `
+            <div class="sp-item" style="display:flex; justify-content:space-between; align-items:center;">
+                <div onclick="loadSession(${s.id}); closeSidePanel();" style="flex:1;">
+                    <div class="sp-item-title">${s.title}</div>
+                    ${s.summary ? `<div class="sp-item-desc" style="font-size:0.75rem; color:var(--text); opacity:0.8; margin-top:2px; margin-bottom:4px;">${s.summary}</div>` : ''}
+                    <div class="sp-item-desc"><i data-lucide="clock" size="12"></i> ${s.date}</div>
+                </div>
+                <i data-lucide="trash-2" size="15" style="cursor:pointer; color:var(--danger); opacity:0.4; padding:5px;" onclick="deleteSession(event, ${s.id}); openLibrary('archive');" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.4" title="Sil"></i>
+            </div>
+        `).join('');
+        lucide.createIcons();
+        return;
+    }
+
+    if (type === 'reports') {
+        titleEl.innerHTML = '<i data-lucide="bar-chart-2" size="18"></i> Güvenlik Raporu (Canlı)';
+        try {
+            // "Günlük Rapor Çıkart" butonu ve loading durumu
+            let html = `
+                <button onclick="generateDailyReport()" class="tb-btn" style="width:100%; justify-content:center; margin-bottom: 15px; background: var(--accent); color: white; border: none;">
+                    <i data-lucide="calendar" size="16"></i> Günlük Rapor Çıkart
+                </button>
+                <div id="dailyReportContainer">
+                    <div style="text-align:center; padding: 20px; color: var(--muted);"><i data-lucide="loader" class="dot" style="animation: spin 1s linear infinite;"></i> Canlı veriler yükleniyor...</div>
+                </div>
+            `;
+            contentEl.innerHTML = html;
+            lucide.createIcons();
+
+            const token = localStorage.getItem('token');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const res = await fetch(`${API_BASE}/logs?limit=300`, { headers });
+            
+            if (!res.ok) {
+                document.getElementById('dailyReportContainer').innerHTML = `<div style="color:var(--danger); padding:20px;">Raporlar yüklenemedi (HTTP ${res.status}). Lütfen giriş yaptığınızdan emin olun.</div>`;
+                return;
+            }
+            
+            const data = await res.json();
+            const currentUserId = document.getElementById('userIdInput').value.trim() || 'anon';
+            window.cachedLogs = (data.logs || []).filter(l => l.user_id === currentUserId); // Günlük rapor için sakla
+            
+            const logs = window.cachedLogs || [];
+            const total = logs.length;
+            
+            const allowedCount = logs.filter(l => {
+                const act = String(l.action || l.status || '').trim().toUpperCase();
+                const cat = String(l.category || '').trim().toUpperCase();
+                return act === 'ALLOW' || act === 'PASS' || cat === 'SAFE';
+            }).length;
+            
+            const pendingCount = logs.filter(l => String(l.action || l.status || '').trim().toUpperCase() === 'PENDING').length;
+            const blockedCount = total - allowedCount - pendingCount;
+            
+            let statsHtml = `
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-num" style="color: #34D399">${allowedCount}</div>
+                        <div class="stat-label">Geçen İstekler</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-num" style="color: #F87171">${blockedCount}</div>
+                        <div class="stat-label">Engellenen İstekler</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('dailyReportContainer').innerHTML = statsHtml;
+        } catch(e) {
+            document.getElementById('dailyReportContainer').innerHTML = `<div style="color:var(--danger); padding:20px;">Bağlantı hatası: ${e.message}</div>`;
+        }
+        return;
+    }
+
+    // Templates
+    const lib = LIBRARY_CONTENT[type];
+    if (lib) {
+        titleEl.innerHTML = `<i data-lucide="${lib.icon}" size="18"></i> ${lib.title}`;
+        contentEl.innerHTML = lib.items.map(item => `
+            <div class="sp-item" onclick="fillPromptAndFocus('${item.prompt.replace(/'/g, "\\'")}'); closeSidePanel();">
+                <div class="sp-item-title">${item.label}</div>
+                <div class="sp-item-desc">${item.prompt}</div>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+}
+
+async function generateDailyReport() {
+    const container = document.getElementById('dailyReportContainer');
+    container.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--accent);"><i data-lucide="loader" class="dot" style="animation: spin 1s linear infinite;"></i> Günlük Rapor Hazırlanıyor...</div>';
+    lucide.createIcons();
+
+    // Simüle edilmiş bir bekleme (estetik için)
+    await new Promise(r => setTimeout(r, 600));
+
+    const logs = window.cachedLogs || [];
+    
+    // Sadece bugünün kayıtlarını filtrele
+    const todayStr = new Date().toDateString();
+    const todayLogs = logs.filter(l => new Date(l.created_at).toDateString() === todayStr);
+
+    const total = todayLogs.length;
+    
+    const allowedLogs = todayLogs.filter(l => {
+        const act = String(l.action || l.status || '').trim().toUpperCase();
+        const cat = String(l.category || '').trim().toUpperCase();
+        return act === 'ALLOW' || act === 'PASS' || cat === 'SAFE';
+    });
+    
+    const pendingLogs = todayLogs.filter(l => String(l.action || l.status || '').trim().toUpperCase() === 'PENDING');
+    const blockedLogs = todayLogs.filter(l => !allowedLogs.includes(l) && !pendingLogs.includes(l));
+
+    // Kategorilere göre grupla (Engellenenler)
+    const categoryCounts = {};
+    blockedLogs.forEach(b => {
+        const cat = b.category || 'Bilinmeyen Hata';
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+    });
+
+    // En çok hata veren kategori
+    let topCategory = '-';
+    let maxCount = 0;
+    for (const [cat, count] of Object.entries(categoryCounts)) {
+        if (count > maxCount) { maxCount = count; topCategory = cat; }
+    }
+
+    const safeRate = total > 0 ? Math.round((allowedLogs.length / total) * 100) : 0;
+    const blockRate = total > 0 ? Math.round((blockedLogs.length / total) * 100) : 0;
+
+    let html = `
+        <div style="background:var(--bg-input); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:15px; animation: fadeUp 0.4s ease;">
+            <h2 style="font-size:1.1rem; margin-bottom:15px; color:var(--text); display:flex; align-items:center; gap:8px;">
+                <i data-lucide="file-text" style="color:var(--accent);"></i> Gün Sonu Raporu
+            </h2>
+            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:20px;">
+                Tarih: <strong>${new Date().toLocaleDateString('tr-TR')}</strong>
+            </p>
+
+            <div style="display:flex; gap:15px; margin-bottom:20px;">
+                <div style="flex:1; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:10px; padding:15px; text-align:center;">
+                    <div style="font-size:1.6rem; font-weight:700; color:#34D399;">${allowedLogs.length}</div>
+                    <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase;">Güvenli (Geçti)</div>
+                </div>
+                <div style="flex:1; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:15px; text-align:center;">
+                    <div style="font-size:1.6rem; font-weight:700; color:#F87171;">${blockedLogs.length}</div>
+                    <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase;">Engellendi</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <h4 style="font-size:0.85rem; color:var(--text); margin-bottom:10px;">🛡️ Genel Güvenlik Skoru</h4>
+                <div style="width:100%; height:8px; background:rgba(239,68,68,0.3); border-radius:4px; overflow:hidden; display:flex;">
+                    <div style="height:100%; width:${safeRate}%; background:#34D399;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-top:5px; color:var(--muted);">
+                    <span>%${safeRate} Güvenli</span>
+                    <span>%${blockRate} Engellendi</span>
+                </div>
+            </div>
+
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:15px;">
+                <h4 style="font-size:0.85rem; color:var(--text); margin-bottom:10px;">📉 Sistem Analizi</h4>
+                <ul style="list-style:none; padding:0; margin:0; font-size:0.8rem; color:var(--muted); display:flex; flex-direction:column; gap:8px;">
+                    <li><strong style="color:var(--text);">Toplam İstek:</strong> ${total}</li>
+                    <li><strong style="color:#F87171;">En Yoğun Tehdit:</strong> ${topCategory} (${maxCount} kez)</li>
+                </ul>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+    lucide.createIcons();
+}
+
+function fillPromptAndFocus(text) {
+    const ta = document.getElementById('mainInput');
+    ta.value = text + ' ';
+    ta.focus();
+    autoResize(ta);
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+// ─── SEND ───
+async function sendMessage() {
+    const ta = document.getElementById('mainInput');
+    const text = ta.value.trim();
+    const hasFiles = attachedFiles.length > 0;
+
+    if (!text && !hasFiles) return;
+
+    const userId = document.getElementById('userIdInput').value.trim() || 'anon';
+    const sentText = text || '(Dosya eklendi)';
+    const sentFiles = [...attachedFiles];
+
+    ta.value = '';
+    ta.style.height = 'auto';
+    attachedFiles = [];
+    renderFilePreview();
+
+    if (welcomeShown) toggleWelcome(false);
+
+    // İlk mesajda yeni oturum oluştur
+    if (chatHistory.length === 0) {
+        currentSessionId = Date.now();
+    }
+
+    // ✅ FIX: Önce sadece güvenli geçmişi oluştur (BLOCK edilmemiş mesajlar)
+    const safeHistory = chatHistory
+        .filter(m => !m.blocked && m.content)
+        .map(m => ({ role: m.role, content: m.content }));
+
+    // ✅ FIX: User mesajını hemen chatHistory'ye ekle (henüz blocked değil, sonradan güncellenecek)
+    const userMsgIndex = chatHistory.length;
+    chatHistory.push({ role: 'user', content: sentText, blocked: false });
+
+    // Show user message with file info
+    appendMsg('user', sentText, '', '', 0, false, sentFiles);
+
+    const typingId = appendTyping();
+    document.getElementById('sendBtn').disabled = true;
+
+    try {
+        let responseText = sentText;
+
+        // If files are attached, read their text content (for text-based files)
+        if (sentFiles.length > 0) {
+            const fileContents = await readTextFiles(sentFiles);
+            if (fileContents) {
+                responseText = sentText + (sentText ? '\n\n' : '') + fileContents;
+            }
+        }
+
+        const payload = { text: responseText || 'Dosyayı analiz et', user_id: userId, conversation_history: safeHistory };
+        const companyId = localStorage.getItem('company_id');
+        if (companyId) payload.company_id = companyId;
+
+        const token = localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`${API_BASE}/analyze`, {
+            method: 'POST', headers, body: JSON.stringify(payload)
+        });
+
+        removeTyping(typingId);
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            // ✅ FIX: Hata durumunda user mesajını blocked olarak işaretle
+            chatHistory[userMsgIndex].blocked = true;
+            appendMsg('ai', `❌ Hata (${res.status}): ${err.detail || 'Backend yanıt vermedi'}`, 'error');
+            return;
+        }
+        const result = await res.json();
+        handleResult(result, sentText, userId, userMsgIndex);
+
+    } catch(e) {
+        removeTyping(typingId);
+        // ✅ FIX: Hata durumunda user mesajını blocked olarak işaretle
+        chatHistory[userMsgIndex].blocked = true;
+        appendMsg('ai', '❌ Backend bağlantı hatası. Sistemin çalıştığından emin olun.', 'error');
+    } finally {
+        document.getElementById('sendBtn').disabled = false;
+    }
+}
+
+async function readTextFiles(files) {
+    const textTypes = ['text/', 'application/json', 'application/javascript'];
+    const results = [];
+    
+    for (const file of files) {
+        const isText = textTypes.some(t => file.type.startsWith(t)) ||
+                       /\.(txt|py|js|ts|json|csv|md|html|css|xml|yaml|yml|sh|bat|sql)$/i.test(file.name);
+                       
+        const isDoc = /\.(pdf|docx|pptx|png|jpg|jpeg|webp|bmp)$/i.test(file.name);
+        
+        if (isText && file.size < 500000) { // Max 500KB
+            try {
+                const content = await file.text();
+                results.push(`--- Dosya: ${file.name} ---\n${content}\n--- /Dosya Sonu ---`);
+            } catch(e) {}
+        } else if (isDoc) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const token = localStorage.getItem('token');
+                const headers = {};
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+                
+                const res = await fetch(`${API_BASE}/extract-document`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    results.push(`--- Dosya: ${file.name} ---\n${data.extracted_text}\n--- /Dosya Sonu ---`);
+                } else {
+                    results.push(`[Dosya okunamadı: ${file.name}]`);
+                }
+            } catch (e) {
+                results.push(`[Dosya işlenirken hata oluştu: ${file.name}]`);
+            }
+        } else {
+            results.push(`[Dosya eklendi: ${file.name} (${formatSize(file.size)}) — İkili dosya analiz edilemez]`);
+        }
+    }
+    return results.join('\n\n');
+}
+
+// LLM'in kendi sansürünü uygulayıp reddetme ifadesi kullandığını tespit et
+function detectLLMRefusal(text) {
+    if (!text) return false;
+    const lower = text.toLowerCase();
+    const refusalPatterns = [
+        // Türkçe reddetme kalıpları
+        'üzgünüm, ancak',
+        'üzgünüm, bu',
+        'üzgünüm, size',
+        'maalesef bu konuda',
+        'maalesef yardımcı',
+        'bilgi sağlayamam',
+        'yöntem sağlayamam',
+        'hiçbir bilgi veya yöntem sağlayamam',
+        'kesinlikle yerine getiremem',
+        'yerine getiremem',
+        'bu isteği yerine getiremem',
+        'bu tür bilgileri paylaşamam',
+        'bilgileri paylaşamam',
+        'bu bilgiyi sağlayamam',
+        'bu konuda yardımcı olamam',
+        'yardımcı olamam',
+        'tehlikeli ve yasa dışı',
+        'yasa dışı bir faaliyet',
+        'yasa dışı faaliyetlerin',
+        'yasadışı',
+        'son derece tehlikeli',
+        'ciddi yasal sonuçlara',
+        'ciddi yasal sonuçlar',
+        'yasal sonuçlar doğurur',
+        'insanları tehlikeye',
+        'güvenliği ve yasalara uygunluğu',
+        'bu bilgiyi vermem uygun olmaz',
+        'bu talebi reddetmek zorundayım',
+        'etik olarak uygun değil',
+        'zararlı içerik üretemem',
+        'bomba yapımı',
+        'patlayıcı yapımı',
+        'silah yapımı',
+        'uyuşturucu yapımı',
+        'zehir yapımı',
+        // İngilizce reddetme kalıpları
+        'i cannot assist',
+        'i can\'t assist',
+        'i cannot provide',
+        'i can\'t provide',
+        'i cannot help',
+        'i can\'t help',
+        'i must decline',
+        'i\'m unable to',
+        'against my guidelines',
+        'not able to fulfill'
+    ];
+    return refusalPatterns.some(pattern => lower.includes(pattern));
+}
+
+function handleResult(result, originalText, userId, userMsgIndex) {
+    const status = result.status;
+    const llm = result.llm_response || '';
+    const cat = result.category || '';
+    const latency = result.latency_ms || 0;
+
+    // ✅ FIX: User mesajı artık sendMessage'da ekleniyor, burada tekrar eklemiyoruz
+
+    if (status === 'ALLOW') {
+        const response = llm || '✅ İstek başarıyla işlendi ve güvenli bulundu.';
+        chatHistory.push({ role: 'model', content: response });
+
+        // LLM kendi sansürünü uyguladıysa (cevabında reddetme ifadeleri varsa)
+        // badge'i kırmızı "İzin Verilmedi · Unsafe" olarak göster
+        const isLLMRefusal = detectLLMRefusal(response);
+        if (isLLMRefusal) {
+            appendMsg('ai', response, 'unsafe', 'Unsafe', latency, true);
+        } else {
+            appendMsg('ai', response, 'allow', cat, latency);
+        }
+    } else if (status === 'DLP_ALERT') {
+        // ✅ DLP_ALERT: Interaktif DLP modal'ını aç
+        chatHistory[userMsgIndex].blocked = true;
+        
+        // Kullanıcı mesajına DLP Uyarısı badge'i ekle
+        const msgDivs = document.querySelectorAll('.msg-row.user .msg-bubble');
+        if (msgDivs.length > 0) {
+            const bubble = msgDivs[msgDivs.length - 1];
+            if (!bubble.innerHTML.includes('badge-dlp')) {
+                bubble.innerHTML += `<br><span class="status-badge badge-dlp" style="margin-top:8px; display:inline-block;">⚠️ Hassas Veri Tespit Edildi</span>`;
+            }
+        }
+        const entities = result.detected_entities || [];
+        const maskedText = result.processed_text || originalText;
+        // Modal'ı aç ve gerekli verileri ilet
+        openDlpModal({
+            originalText,
+            maskedText,
+            entities,
+            userId,
+            userMsgIndex,
+            latency,
+            cat
+        });
+        return; // Modal kapanana kadar bekle
+    } else if (status === 'PENDING') {
+        // ✅ FIX: Pending user mesajını blocked olarak işaretle
+        chatHistory[userMsgIndex].blocked = true;
+        chatHistory.push({ role: 'model', content: llm || '⏳ Yönetici onayı bekleniyor.', blocked: true });
+        appendMsg('ai', llm || '⏳ İsteğiniz yönetici onayına gönderildi.', 'pending', cat, latency);
+    } else {
+        // ✅ FIX: BLOCK edilen user mesajını blocked olarak işaretle
+        chatHistory[userMsgIndex].blocked = true;
+        const msg = llm || `🚫 İstek engellendi. Kategori: <strong>${cat}</strong>`;
+        chatHistory.push({ role: 'model', content: msg, blocked: true });
+        appendMsg('ai', msg, 'block', cat, latency, true);
+    }
+
+    // Geçmiş sohbetlere anında kaydet / güncelle
+    saveCurrentSession(true);
+}
+
+// ─── MESSAGE RENDERING ───
+function appendMsg(role, html, statusType, cat, latency, raw = false, files = []) {
+    const mc = document.getElementById('messagesContainer');
+    const row = document.createElement('div');
+    row.className = `msg-row ${role}`;
+
+    const userId = document.getElementById('userIdInput').value;
+    const initials = (userId.slice(0,2) || 'US').toUpperCase();
+
+    const avatarHTML = role === 'user'
+        ? `<div class="msg-avatar">${initials}</div>`
+        : `<div class="msg-avatar ai"><i data-lucide="sparkles" size="14"></i></div>`;
+
+    let badgeHTML = '';
+    if (statusType === 'allow')   badgeHTML = `<br><span class="status-badge badge-allow">✅ İzin Verildi · ${cat} · ${latency}ms</span>`;
+    if (statusType === 'unsafe')  badgeHTML = `<br><span class="status-badge badge-unsafe">🚫 İzin Verilmedi · ${cat} · ${latency}ms</span>`;
+    if (statusType === 'block')   badgeHTML = `<br><span class="status-badge badge-block">🚫 Engellendi · ${cat} · ${latency}ms</span>`;
+    if (statusType === 'dlp')     badgeHTML = `<br><span class="status-badge badge-dlp">⚠️ DLP Uyarısı · ${cat}</span>`;
+    if (statusType === 'pending') badgeHTML = `<br><span class="status-badge badge-pending">⏳ Onay Bekliyor · ${cat}</span>`;
+
+    let filesHTML = '';
+    if (files && files.length) {
+        filesHTML = files.map(f => `
+            <div class="msg-attachment">
+                <i data-lucide="${getFileIcon(f.name)}" size="13"></i>
+                <span>${f.name}</span>
+                <span style="opacity:0.6">(${formatSize(f.size)})</span>
+            </div>`).join('');
+    }
+
+    const bubbleContent = raw ? html : escapeHtml(html).replace(/\n/g, '<br>');
+
+    row.innerHTML = `
+        ${role === 'ai' ? avatarHTML : ''}
+        <div>
+            <div class="msg-bubble"><span class="msg-text">${bubbleContent}</span>${filesHTML}${badgeHTML}</div>
+        </div>
+        ${role === 'user' ? avatarHTML : ''}
+    `;
+
+    mc.appendChild(row);
+    mc.scrollTop = mc.scrollHeight;
+    if (window.lucide) lucide.createIcons();
+}
+
+function escapeHtml(t) {
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function appendTyping() {
+    const mc = document.getElementById('messagesContainer');
+    const id = 'typing_' + Date.now();
+    const row = document.createElement('div');
+    row.className = 'msg-row ai';
+    row.id = id;
+    row.innerHTML = `
+        <div class="msg-avatar ai"><i data-lucide="sparkles" size="14"></i></div>
+        <div class="msg-bubble" style="padding:14px 18px;">
+            <div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+    `;
+    mc.appendChild(row);
+    mc.scrollTop = mc.scrollHeight;
+    if (window.lucide) lucide.createIcons();
+    return id;
+}
+
+function removeTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const lastUser = localStorage.getItem('lastChatUser');
+    const input = document.getElementById('userIdInput');
+    if (lastUser && input) {
+        input.value = lastUser;
+    }
+    
+    // Geçmişteki tüm oturumları ve tüm kullanıcıları düzelt (Migration)
+    for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        if (key && key.startsWith('chatSessions_')) {
+            try {
+                let data = JSON.parse(localStorage.getItem(key));
+                let changed = false;
+                data.forEach(s => {
+                    if (s.messages && s.messages.length > 0) {
+                        let firstMsg = s.messages.find(m => m.role === 'user');
+                        if (firstMsg) {
+                            let text = firstMsg.content;
+                            let clean = text.replace(/[^a-zA-ZğüşıöçĞÜŞİÖÇ\s0-9?.,]/g, ' ').replace(/\s+/g, ' ').trim();
+                            let summarySnippet = clean.length > 50 ? clean.substring(0, 50) + '...' : clean;
+                            
+                            // Eğer özet yoksa veya boşsa, herkes için ekle
+                            if (!s.summary) {
+                                s.summary = summarySnippet;
+                                changed = true;
+                            }
+                            // Başlık eksikse onu da düzelt
+                            if (!s.title || s.title === 'Sohbet' || s.title.split(' ').length <= 4) {
+                                s.title = generateTitle(text);
+                                changed = true;
+                            }
+                        }
+                    }
+                });
+                if (changed) {
+                    localStorage.setItem(key, JSON.stringify(data));
+                }
+            } catch (e) {}
+        }
+    }
+    
+    loadSessionHistory();
+});
+
+// ─── DLP MODAL FUNCTIONS ───
+
+let currentDlpContext = null;
+
+function openDlpModal(ctx) {
+    currentDlpContext = ctx;
+    
+    // UI'ı hazırla
+    document.getElementById('dlpEntityPills').innerHTML = ctx.entities.map(e => 
+        `<span class="dlp-entity-pill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>${e}</span>`
+    ).join('');
+    
+    // Preview hazırla (highlight ile)
+    let highlightedText = ctx.maskedText;
+    // Eğer maskelenmiş yerler yıldız içeriyorsa onları renklendir
+    highlightedText = highlightedText.replace(/\b([A-Za-z0-9]*\*{3,}[A-Za-z0-9]*)\b/g, '<span class="dlp-masked">$1</span>');
+    document.getElementById('dlpPreviewBox').innerHTML = highlightedText;
+    
+    // Panelleri gizle
+    document.getElementById('dlpPreviewBox').style.display = 'none';
+    document.getElementById('dlpPreviewChevron').style.transform = 'rotate(0deg)';
+    document.getElementById('dlpJustifyWrap').classList.remove('show');
+    document.getElementById('dlpFpWrap').classList.remove('show');
+    document.getElementById('dlpJustifyText').value = '';
+    document.getElementById('dlpFpText').value = '';
+
+    // Modalı göster
+    document.getElementById('dlpOverlay').classList.add('show');
+}
+
+function closeDlpModal() {
+    document.getElementById('dlpOverlay').classList.remove('show');
+    currentDlpContext = null;
+}
+
+function toggleDlpPreview() {
+    const box = document.getElementById('dlpPreviewBox');
+    const chev = document.getElementById('dlpPreviewChevron');
+    if (box.style.display === 'none' || !box.style.display) {
+        box.style.display = 'block';
+        chev.style.transform = 'rotate(180deg)';
+    } else {
+        box.style.display = 'none';
+        chev.style.transform = 'rotate(0deg)';
+    }
+}
+
+function dlpToggleJustify() {
+    const wrap = document.getElementById('dlpJustifyWrap');
+    const chev = document.getElementById('dlpJustifyChevron');
+    wrap.classList.toggle('show');
+    if (wrap.classList.contains('show')) {
+        chev.style.transform = 'rotate(180deg)';
+        document.getElementById('dlpJustifyText').focus();
+    } else {
+        chev.style.transform = 'rotate(0deg)';
+    }
+}
+
+function dlpToggleFp() {
+    const wrap = document.getElementById('dlpFpWrap');
+    wrap.classList.toggle('show');
+    if (wrap.classList.contains('show')) {
+        document.getElementById('dlpFpText').focus();
+    }
+}
+
+function openDlpPolicy(e) {
+    e.preventDefault();
+    // alert("Kurum Güvenlik Politikası:\n\nKişisel veriler (T.C. Kimlik, Kredi Kartı vb.) dış sistemlere maskelenmeden iletilemez. İstisnai durumlar SOC ekibi tarafından Red Flag logu ile denetlenir.");
+    window.open('/policy.html', '_blank');
+}
+
+async function dlpMaskAndSend() {
+    if (!currentDlpContext) return;
+    const ctx = currentDlpContext;
+    closeDlpModal();
+    
+    // UI'daki kullanıcı mesajını maskeli haliyle güncelle
+    const msgRows = document.querySelectorAll('.msg-row.user');
+    if (msgRows.length > 0) {
+        const lastRow = msgRows[msgRows.length - 1];
+        const msgText = lastRow.querySelector('.msg-text');
+        if (msgText) {
+            msgText.innerHTML = escapeHtml(ctx.maskedText).replace(/\n/g, '<br>');
+        }
+        const badge = lastRow.querySelector('.badge-dlp');
+        if (badge) {
+            badge.className = 'status-badge badge-allow';
+            badge.innerHTML = '✅ Otomatik Maskelendi';
+        }
+    }
+    
+    // Geçmişteki mesajı güncelle ve blokesini kaldır
+    if (chatHistory[ctx.userMsgIndex]) {
+        chatHistory[ctx.userMsgIndex].content = ctx.maskedText;
+        chatHistory[ctx.userMsgIndex].blocked = false;
+    }
+
+    const safeHistory = chatHistory
+        .filter(m => !m.blocked && m.content)
+        .map(m => ({ role: m.role, content: m.content }));
+
+    const typingId = appendTyping();
+    const payload = {
+        text: ctx.maskedText,
+        user_id: ctx.userId,
+        bypass_action: "auto_mask",
+        conversation_history: safeHistory
+    };
+
+    try {
+        const token = localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`${API_BASE}/analyze`, {
+            method: 'POST', headers, body: JSON.stringify(payload)
+        });
+
+        removeTyping(typingId);
+        
+        if (!res.ok) {
+            appendMsg('ai', `❌ Hata (${res.status}): İşlem başarısız.`, 'error');
+            return;
+        }
+        
+        const result = await res.json();
+        handleResult(result, ctx.maskedText, ctx.userId, ctx.userMsgIndex);
+    } catch(e) {
+        removeTyping(typingId);
+        appendMsg('ai', '❌ Bağlantı hatası.', 'error');
+    }
+}
+
+function dlpEditPrompt() {
+    if (!currentDlpContext) return;
+    // Kullanıcının mesajını input'a geri koy
+    const input = document.getElementById('mainInput');
+    input.value = currentDlpContext.originalText;
+    
+    // Sadece user mesajını çıkar
+    chatHistory.pop(); 
+    const mc = document.getElementById('messagesContainer');
+    if (mc.lastElementChild) {
+        mc.lastElementChild.remove(); // User mesajını DOM'dan sil
+    }
+    
+    closeDlpModal();
+    input.focus();
+    autoResize(input);
+}
+
+function dlpCancel() {
+    if (!currentDlpContext) return;
+    
+    const msgRows = document.querySelectorAll('.msg-row.user');
+    if (msgRows.length > 0) {
+        const lastRow = msgRows[msgRows.length - 1];
+        const badge = lastRow.querySelector('.badge-dlp');
+        if (badge) {
+            badge.className = 'status-badge badge-block';
+            badge.innerHTML = '🚫 İşlem İptal Edildi';
+        }
+    }
+    
+    // İptal edildi, sohbet geçmişine "İptal Edildi" uyarısı ekleyelim
+    chatHistory.push({ role: 'model', content: "🚫 İşlem kullanıcı tarafından iptal edildi.", blocked: true });
+    appendMsg('ai', "🚫 İşlem iptal edildi. Veri LLM'e gönderilmedi.", 'block', currentDlpContext.cat, currentDlpContext.latency);
+    closeDlpModal();
+}
+
+async function dlpJustifiedSend() {
+    if (!currentDlpContext) return;
+    const reason = document.getElementById('dlpJustifyText').value.trim();
+    if (!reason || reason.length < 10) {
+        alert("Lütfen geçerli ve detaylı bir gerekçe girin (en az 10 karakter).");
+        return;
+    }
+    
+    const ctx = currentDlpContext;
+    closeDlpModal();
+    
+    // UI'daki kullanıcı mesajındaki badge'i güncelle
+    const msgRows = document.querySelectorAll('.msg-row.user');
+    if (msgRows.length > 0) {
+        const lastRow = msgRows[msgRows.length - 1];
+        const badge = lastRow.querySelector('.badge-dlp');
+        if (badge) {
+            badge.className = 'status-badge badge-unsafe';
+            badge.innerHTML = '🚩 İstisnai Gönderim (Red Flag)';
+        }
+    }
+    
+    // Güvenli geçmiş (bu mesaj dahil)
+    if (chatHistory[ctx.userMsgIndex]) {
+        chatHistory[ctx.userMsgIndex].blocked = false;
+    }
+    const safeHistory = chatHistory
+        .filter(m => !m.blocked && m.content)
+        .map(m => ({ role: m.role, content: m.content }));
+
+    const typingId = appendTyping();
+    const payload = {
+        text: ctx.originalText,
+        user_id: ctx.userId,
+        bypass_action: "bypass", 
+        bypass_justification: `JUSTIFIED: ${reason}`,
+        conversation_history: safeHistory
+    };
+
+    try {
+        const token = localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`${API_BASE}/analyze`, {
+            method: 'POST', headers, body: JSON.stringify(payload)
+        });
+
+        removeTyping(typingId);
+        
+        if (!res.ok) {
+            appendMsg('ai', `❌ Hata (${res.status}): İşlem başarısız.`, 'error');
+            return;
+        }
+        
+        const result = await res.json();
+        // Red flag uyarısını ekle
+        chatHistory.push({ role: 'model', content: "🚩 RED FLAG: Hassas veri gerekçeyle gönderildi." });
+        appendMsg('ai', "🚩 <strong>RED FLAG OLUŞTURULDU</strong><br>İstisnai gönderim loglara kaydedildi. Yanıt alınıyor...", 'unsafe', 'OVERRIDE', 0, true);
+        
+        handleResult(result, ctx.originalText, ctx.userId, ctx.userMsgIndex);
+    } catch(e) {
+        removeTyping(typingId);
+        appendMsg('ai', '❌ Bağlantı hatası.', 'error');
+    }
+}
+
+function dlpRequestApproval() {
+    if (!currentDlpContext) return;
+    const ctx = currentDlpContext;
+    closeDlpModal();
+    
+    // Simulate approval request
+    chatHistory.push({ role: 'model', content: "⏳ Yönetici onayı talep edildi.", blocked: true });
+    appendMsg('ai', "⏳ <strong>Onay Bekleniyor</strong><br>İstek SOC yöneticisine iletildi. Onaylandıktan sonra işleme alınacaktır.", 'pending', ctx.cat, ctx.latency, true);
+}
+
+function submitFalsePositive() {
+    if (!currentDlpContext) return;
+    const desc = document.getElementById('dlpFpText').value.trim();
+    if (!desc || desc.length < 5) {
+        alert("Lütfen açıklama girin.");
+        return;
+    }
+    
+    const ctx = currentDlpContext;
+    closeDlpModal();
+    
+    chatHistory.push({ role: 'model', content: "✅ False Positive bildirimi SOC'a iletildi.", blocked: true });
+    appendMsg('ai', "✅ <strong>Bildirim Alındı</strong><br>Hatalı tespit bildirimi SOC ekibine ulaştı. (Referans: FP-" + Date.now() + ")", 'allow', 'REPORT', 0, true);
+}
+
+</script>
+</body>
+</html>

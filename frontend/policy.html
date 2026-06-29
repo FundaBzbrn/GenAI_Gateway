@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Security Gateway - Kurum Güvenlik ve Kullanım Politikası</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0A0A0A;
+            --surface: #141414;
+            --border: #2A2A2A;
+            --text-main: #E5E5E5;
+            --text-muted: #A3A3A3;
+            --primary: #9D6EF8;
+            --danger: #EF4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #FFFFFF;
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .header .meta {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .official-seal {
+            color: var(--primary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        h2 {
+            color: #FFFFFF;
+            font-size: 18px;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        p {
+            margin-bottom: 16px;
+            font-size: 14.5px;
+            color: #D4D4D4;
+        }
+
+        ul {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+
+        li {
+            font-size: 14.5px;
+            margin-bottom: 8px;
+            color: #D4D4D4;
+        }
+
+        .warning-box {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger);
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box strong {
+            color: var(--danger);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .print-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-top: 30px;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .print-btn:hover {
+            opacity: 0.9;
+        }
+
+        @media print {
+            body { background: white; color: black; }
+            .container { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%; }
+            .print-btn { display: none; }
+            h1, h2, .official-seal, strong { color: black !important; }
+            p, li, .meta { color: #333 !important; }
+            .warning-box { border-left: 4px solid black; background: #f5f5f5; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <span class="official-seal">GİZLİ VE KURUM İÇİ (INTERNAL)</span>
+        <h1>Üretken Yapay Zeka (GenAI) ve Veri Güvenliği Politikası</h1>
+        <div class="meta">
+            Doküman Kodu: SEC-POL-2026/04 | Sürüm: 2.1 | Son Güncelleme: 18 Haziran 2026<br>
+            Onaylayan: Kurumsal Bilgi Güvenliği Komitesi (CISO Ofisi)
+        </div>
+    </div>
+
+    <h2>1. Amaç ve Kapsam</h2>
+    <p>Bu politikanın amacı, kurum personelinin Üretken Yapay Zeka (GenAI) sistemlerini ve dış kaynaklı Büyük Dil Modellerini (LLM) (örn: Gemini, ChatGPT, Claude vb.) kullanırken uyması gereken asgari güvenlik standartlarını, KVKK (Kişisel Verilerin Korunması Kanunu) yükümlülüklerini ve Veri Kaybı Önleme (DLP) kurallarını belirlemektir.</p>
+    <p>Bu politika, kurum ağına bağlı tüm cihazlardan veya kurum tarafından yetkilendirilmiş GenAI Security Gateway arayüzü üzerinden yapılan tüm yapay zeka sorgularını kapsar.</p>
+
+    <h2>2. KVKK ve Hassas Veri İletimi Kuralları</h2>
+    <p>Üçüncü parti LLM sağlayıcılarına gönderilen metinler (promptlar), model eğitimi veya loglama amacıyla tutulma riski taşımaktadır. Bu nedenle aşağıdaki verilerin maskelenmeden (anonimleştirilmeden) GenAI Gateway üzerinden dışarı aktarılması <strong>kesinlikle yasaktır</strong>:</p>
+    <ul>
+        <li>T.C. Kimlik Numaraları ve Pasaport Numaraları</li>
+        <li>Kredi Kartı, Banka Kartı bilgileri (PAN, CVV, Son Kullanma Tarihi) ve IBAN numaraları</li>
+        <li>Müşterilere veya çalışanlara ait Telefon Numaraları, E-posta adresleri ve Ev Adresleri</li>
+        <li>Sağlık verileri, biyometrik veriler ve diğer Özel Nitelikli Kişisel Veriler</li>
+        <li>Kuruma ait API Key'ler, parolalar, özel şifreleme anahtarları ve veritabanı bağlantı metinleri</li>
+    </ul>
+
+    <div class="warning-box">
+        <strong>⚠️ KRİTİK İHLAL (RED FLAG) UYARISI</strong>
+        Sistemimiz, girilen promptları yapay zeka tarafından denetleyen 3 katmanlı (Regex, DeBERTa, LLM Judge) bir Güvenlik Ağ Geçidine (Security Gateway) sahiptir. Hassas veri tespit edildiğinde işlem otomatik olarak durdurulur. Bu uyarıyı kasıtlı olarak aşmaya çalışmak veya maskeleme yapmadan veriyi dışarı sızdırmak SOC (Güvenlik Operasyonları Merkezi) tarafından "Red Flag" olarak işaretlenir.
+    </div>
+
+    <h2>3. "İstisnai Gönderim" ve Gerekçe Bildirimi</h2>
+    <p>Kurum içi operasyonların zorunlu kıldığı durumlarda (örneğin; sadece isim soyisim analizinin yapay zekaya şart olduğu senaryolar), personel <strong>"Gerekçe Belirterek Gönder"</strong> veya <strong>"Yöneticiden Onay İste"</strong> mekanizmalarını kullanabilir.</p>
+    <p>Ancak, gerekçe belirtilerek gönderilen tüm istisnai talepler, Audit (Denetim) loglarında tam metin olarak saklanır, kullanıcının IP adresi ve kurum sicil numarası ile ilişkilendirilir. Her ayın sonunda CISO ofisi tarafından bu istisnaların rasgele %10'u manuel olarak denetlenir. Yetersiz veya asılsız gerekçelerle KVKK verisini dış sistemlere sızdıran personel hakkında idari soruşturma başlatılır.</p>
+
+    <h2>4. Jailbreak ve Prompt Injection Denemeleri</h2>
+    <p>Sistemin güvenlik kurallarını (System Prompt) esnetmek, atlatmak veya kuruma ait yapay zeka altyapısına sızmaya çalışmak (Prompt Injection) siber saldırı teşebbüsü olarak değerlendirilir. Gateway üzerinde bulunan yapay zeka yargıcı (LLM Judge) bu tür girişimleri anında tespit edecek şekilde eğitilmiştir. Kurum personeli, sistemi amacı dışında kullanamaz.</p>
+
+    <h2>5. Sorumluluk ve Yaptırımlar</h2>
+    <p>Kurum politikasında belirtilen kurallara aykırı hareket eden, GenAI Security Gateway'in DLP (Veri Kaybı Önleme) uyarılarını ihlal ederek KVKK ve şirket gizli bilgilerini 3. taraflarla maskesiz paylaşan kullanıcılar hakkında:</p>
+    <ul>
+        <li>Disiplin kuruluna sevk,</li>
+        <li>6698 sayılı KVKK kapsamında oluşabilecek idari para cezalarının ilgili personele rücu edilmesi,</li>
+        <li>Gerekli görülen hallerde İş Kanunu'nun 25/II. maddesi (Haklı Nedenle Derhal Fesih) uyarınca iş akdinin feshedilmesi,</li>
+    </ul>
+    <p>yaptırımları uygulanacaktır.</p>
+
+    <button class="print-btn" onclick="window.print()">Bu Politikayı Yazdır / PDF Olarak Kaydet</button>
+
+    <div class="footer">
+        © 2026 GenAI Security Gateway Enterprise • Tüm Hakları Saklıdır.<br>
+        Bu belge elektronik olarak imzalanmış ve yürürlüğe girmiştir.
+    </div>
+</div>
+
+</body>
+</html>

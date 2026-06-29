@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenAI Security Gateway - Kurumsal Afiş</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @page {
+      size: 70cm 100cm;
+      margin: 0;
+    }
+
+    body {
+      width: 2480px;
+      height: 3543px;
+      font-family: 'Inter', 'Outfit', sans-serif;
+      background: #0a0a1a;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ===== ENHANCED BACKGROUND ===== */
+    .bg-gradient {
+      position: absolute;
+      inset: 0;
+      background:
+        /* Top purple glow - matching system header */
+        radial-gradient(ellipse 90% 35% at 50% 8%, rgba(123, 47, 190, 0.30) 0%, transparent 70%),
+        /* Center sphere area glow */
+        radial-gradient(ellipse 70% 40% at 50% 28%, rgba(147, 80, 220, 0.18) 0%, transparent 65%),
+        /* Mid section golden warmth */
+        radial-gradient(ellipse 80% 30% at 50% 55%, rgba(212, 175, 55, 0.10) 0%, transparent 60%),
+        /* Panel area subtle purple */
+        radial-gradient(ellipse 100% 35% at 50% 72%, rgba(100, 40, 180, 0.12) 0%, transparent 55%),
+        /* Bottom deep fade */
+        radial-gradient(ellipse 120% 50% at 50% 100%, rgba(20, 8, 50, 0.7) 0%, transparent 60%),
+        /* Base gradient matching system dark theme */
+        linear-gradient(180deg,
+          #0c0a20 0%,
+          #0e0b24 15%,
+          #110d28 30%,
+          #0f0a26 50%,
+          #0d0922 70%,
+          #0a0818 85%,
+          #080616 100%);
+      z-index: 0;
+    }
+
+    /* Subtle noise texture overlay */
+    .bg-noise {
+      position: absolute;
+      inset: 0;
+      opacity: 0.015;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+    }
+
+    /* Geometric grid pattern - more subtle */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(212, 175, 55, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: 1;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, rgba(0, 0, 0, 0.4) 0%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, rgba(0, 0, 0, 0.4) 0%, transparent 80%);
+    }
+
+    /* Hexagonal pattern overlay */
+    .bg-hex {
+      position: absolute;
+      inset: 0;
+      opacity: 0.03;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92' viewBox='0 0 80 92'%3E%3Cpath d='M40 0L80 23v46L40 92 0 69V23z' fill='none' stroke='%23D4AF37' stroke-width='0.5'/%3E%3C/svg%3E");
+      background-size: 80px 92px;
+      mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0, 0, 0, 0.5) 0%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0, 0, 0, 0.5) 0%, transparent 80%);
+    }
+
+    /* Ambient light streaks */
+    .bg-streak-1 {
+      position: absolute;
+      top: 0;
+      left: 15%;
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(180deg, transparent 0%, rgba(212, 175, 55, 0.04) 20%, rgba(147, 80, 220, 0.03) 50%, rgba(212, 175, 55, 0.02) 80%, transparent 100%);
+      z-index: 1;
+      filter: blur(20px);
+      transform: scaleX(30);
+    }
+
+    .bg-streak-2 {
+      position: absolute;
+      top: 0;
+      right: 15%;
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(180deg, transparent 0%, rgba(147, 80, 220, 0.04) 30%, rgba(212, 175, 55, 0.03) 60%, rgba(147, 80, 220, 0.02) 85%, transparent 100%);
+      z-index: 1;
+      filter: blur(25px);
+      transform: scaleX(25);
+    }
+
+    /* Golden border frame */
+    .poster-frame {
+      position: absolute;
+      inset: 30px;
+      border: 2px solid rgba(212, 175, 55, 0.20);
+      border-radius: 12px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .poster-frame::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border: 1px solid rgba(212, 175, 55, 0.08);
+      border-radius: 8px;
+    }
+
+    /* Corner accents */
+    .corner {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      z-index: 3;
+    }
+
+    .corner::before,
+    .corner::after {
+      content: '';
+      position: absolute;
+      background: linear-gradient(135deg, #D4AF37, #FFD700);
+    }
+
+    .corner-tl {
+      top: 20px;
+      left: 20px;
+    }
+
+    .corner-tl::before {
+      top: 0;
+      left: 0;
+      width: 40px;
+      height: 2px;
+    }
+
+    .corner-tl::after {
+      top: 0;
+      left: 0;
+      width: 2px;
+      height: 40px;
+    }
+
+    .corner-tr {
+      top: 20px;
+      right: 20px;
+    }
+
+    .corner-tr::before {
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 2px;
+    }
+
+    .corner-tr::after {
+      top: 0;
+      right: 0;
+      width: 2px;
+      height: 40px;
+    }
+
+    .corner-bl {
+      bottom: 20px;
+      left: 20px;
+    }
+
+    .corner-bl::before {
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 2px;
+    }
+
+    .corner-bl::after {
+      bottom: 0;
+      left: 0;
+      width: 2px;
+      height: 40px;
+    }
+
+    .corner-br {
+      bottom: 20px;
+      right: 20px;
+    }
+
+    .corner-br::before {
+      bottom: 0;
+      right: 0;
+      width: 40px;
+      height: 2px;
+    }
+
+    .corner-br::after {
+      bottom: 0;
+      right: 0;
+      width: 2px;
+      height: 40px;
+    }
+
+    /* ===== CONTENT ===== */
+    .content {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 80px 100px;
+    }
+
+    /* TOP - Shield & Title */
+    .top-section {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .shield-icon {
+      width: 100px;
+      height: 110px;
+      margin: 0 auto 20px;
+      position: relative;
+    }
+
+    .shield-icon svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.5));
+    }
+
+    .main-title {
+      font-family: 'Cinzel', serif;
+      font-size: 92px;
+      font-weight: 900;
+      letter-spacing: 18px;
+      background: linear-gradient(135deg, #F5E6A3 0%, #D4AF37 25%, #FFD700 50%, #D4AF37 75%, #B8941F 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+      filter: drop-shadow(0 4px 15px rgba(212, 175, 55, 0.3));
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 300;
+      letter-spacing: 6px;
+      color: rgba(192, 192, 192, 0.9);
+      text-transform: uppercase;
+    }
+
+    .divider {
+      width: 400px;
+      height: 2px;
+      margin: 25px auto;
+      background: linear-gradient(90deg, transparent, #D4AF37, #FFD700, #D4AF37, transparent);
+      position: relative;
+    }
+
+    .divider::after {
+      content: '◆';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #D4AF37;
+      font-size: 14px;
+      background: #0c0a20;
+      padding: 0 15px;
+    }
+
+    /* HERO - Globe/Sphere */
+    .hero-section {
+      position: relative;
+      width: 800px;
+      height: 800px;
+      margin: 20px auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Glow behind sphere */
+    .sphere-glow {
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(147, 80, 220, 0.25) 0%, rgba(212, 175, 55, 0.12) 35%, rgba(123, 47, 190, 0.08) 55%, transparent 70%);
+      filter: blur(60px);
+    }
+
+    /* Light rays */
+    .light-rays {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    .light-rays::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1200px;
+      height: 1200px;
+      background: conic-gradient(from 0deg,
+          transparent 0deg, rgba(212, 175, 55, 0.08) 15deg, transparent 30deg,
+          transparent 45deg, rgba(147, 80, 220, 0.06) 60deg, transparent 75deg,
+          transparent 90deg, rgba(212, 175, 55, 0.08) 105deg, transparent 120deg,
+          transparent 135deg, rgba(147, 80, 220, 0.05) 150deg, transparent 165deg,
+          transparent 180deg, rgba(212, 175, 55, 0.08) 195deg, transparent 210deg,
+          transparent 225deg, rgba(147, 80, 220, 0.05) 240deg, transparent 255deg,
+          transparent 270deg, rgba(212, 175, 55, 0.08) 285deg, transparent 300deg,
+          transparent 315deg, rgba(147, 80, 220, 0.05) 330deg, transparent 345deg);
+      animation: rotate-rays 30s linear infinite;
+    }
+
+    @keyframes rotate-rays {
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    /* Main sphere */
+    .sphere {
+      position: relative;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, #1a1040 0%, #0a0520 60%, #050310 100%);
+      box-shadow:
+        0 0 80px rgba(123, 47, 190, 0.4),
+        0 0 160px rgba(212, 175, 55, 0.15),
+        inset 0 0 60px rgba(123, 47, 190, 0.2),
+        inset -20px -20px 60px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    /* Brain/circuit pattern inside sphere */
+    .sphere::before {
+      content: '';
+      position: absolute;
+      inset: 40px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.2) 0%, transparent 60%);
+      border: 1px solid rgba(212, 175, 55, 0.15);
+    }
+
+    /* Circuit lines inside */
+    .sphere-circuits {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      overflow: hidden;
+      opacity: 0.5;
+    }
+
+    .sphere-circuits::before {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 20%;
+      width: 60%;
+      height: 60%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cpath d='M100 20 Q140 50 160 100 Q140 150 100 180 Q60 150 40 100 Q60 50 100 20Z' fill='none' stroke='%23D4AF37' stroke-width='0.8' opacity='0.6'/%3E%3Cpath d='M100 40 Q130 60 145 100 Q130 140 100 160 Q70 140 55 100 Q70 60 100 40Z' fill='none' stroke='%23D4AF37' stroke-width='0.5' opacity='0.4'/%3E%3Ccircle cx='100' cy='70' r='3' fill='%23D4AF37' opacity='0.6'/%3E%3Ccircle cx='130' cy='100' r='3' fill='%23D4AF37' opacity='0.6'/%3E%3Ccircle cx='100' cy='130' r='3' fill='%23D4AF37' opacity='0.6'/%3E%3Ccircle cx='70' cy='100' r='3' fill='%23D4AF37' opacity='0.6'/%3E%3Cline x1='100' y1='70' x2='130' y2='100' stroke='%23D4AF37' stroke-width='0.5' opacity='0.4'/%3E%3Cline x1='130' y1='100' x2='100' y2='130' stroke='%23D4AF37' stroke-width='0.5' opacity='0.4'/%3E%3Cline x1='100' y1='130' x2='70' y2='100' stroke='%23D4AF37' stroke-width='0.5' opacity='0.4'/%3E%3Cline x1='70' y1='100' x2='100' y2='70' stroke='%23D4AF37' stroke-width='0.5' opacity='0.4'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    /* Orbital rings */
+    .orbital-ring {
+      position: absolute;
+      border: 2px solid rgba(212, 175, 55, 0.4);
+      border-radius: 50%;
+      animation: orbit 12s linear infinite;
+    }
+
+    .orbital-ring-1 {
+      width: 560px;
+      height: 200px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotateX(70deg) rotateZ(-20deg);
+      border-color: rgba(212, 175, 55, 0.5);
+    }
+
+    .orbital-ring-2 {
+      width: 620px;
+      height: 220px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotateX(70deg) rotateZ(40deg);
+      border-color: rgba(212, 175, 55, 0.3);
+      animation-duration: 18s;
+      animation-direction: reverse;
+    }
+
+    @keyframes orbit {
+      to {
+        transform: translate(-50%, -50%) rotateX(70deg) rotateZ(340deg);
+      }
+    }
+
+    /* Floating particles */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .particle-gold {
+      background: radial-gradient(circle, #FFD700, #D4AF37);
+    }
+
+    .particle-purple {
+      background: radial-gradient(circle, #9B59B6, #7B2FBE);
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+        opacity: 0.7;
+      }
+
+      50% {
+        transform: translateY(-15px);
+        opacity: 1;
+      }
+    }
+
+    /* ===== SUMMARY TEXT ===== */
+    .summary-section {
+      text-align: center;
+      margin: 15px 0 30px;
+      max-width: 1800px;
+    }
+
+    .summary-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 300;
+      line-height: 1.6;
+      color: rgba(245, 240, 230, 0.9);
+      letter-spacing: 1px;
+    }
+
+    .summary-text strong {
+      color: #D4AF37;
+      font-weight: 600;
+    }
+
+    .summary-text em {
+      color: #c9a0ff;
+      font-style: normal;
+    }
+
+    /* ===== 3 SCREENSHOT PANELS (Tablet Mockups) ===== */
+    .panels-section {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+      width: 100%;
+      max-width: 2300px;
+      perspective: 1200px;
+    }
+
+    .tablet-frame {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 3px rgba(212, 175, 55, 0.5),
+        0 0 0 5px rgba(212, 175, 55, 0.15),
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        0 0 80px rgba(147, 80, 220, 0.08);
+      background: #0a0a1a;
+      transition: transform 0.4s ease;
+    }
+
+    .tablet-frame::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Golden shine effect on frame */
+    .tablet-frame::after {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 20%;
+      right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.6), transparent);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .tablet-frame img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 22px;
+    }
+
+    /* Center panel - Chat (larger, front) */
+    .tablet-center {
+      width: 760px;
+      height: 580px;
+      z-index: 3;
+      flex-shrink: 0;
+      box-shadow:
+        0 0 0 3px rgba(212, 175, 55, 0.6),
+        0 0 0 6px rgba(212, 175, 55, 0.2),
+        0 30px 80px rgba(0, 0, 0, 0.7),
+        0 0 100px rgba(147, 80, 220, 0.12);
+    }
+
+    /* Side panels - slightly rotated, smaller */
+    .tablet-left {
+      width: 680px;
+      height: 480px;
+      z-index: 2;
+      flex-shrink: 0;
+      transform: perspective(1200px) rotateY(8deg) scale(0.95);
+    }
+
+    .tablet-right {
+      width: 680px;
+      height: 540px;
+      z-index: 2;
+      flex-shrink: 0;
+      transform: perspective(1200px) rotateY(-8deg) scale(0.95);
+    }
+
+    /* Panel labels */
+    .panel-label {
+      position: absolute;
+      bottom: -45px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      z-index: 4;
+    }
+
+    .panel-label-dashboard {
+      color: rgba(155, 89, 182, 0.85);
+    }
+
+    .panel-label-chat {
+      color: rgba(212, 175, 55, 0.9);
+    }
+
+    .panel-label-dlp {
+      color: rgba(231, 100, 80, 0.85);
+    }
+
+    /* Glow effects beneath panels */
+    .panels-glow {
+      position: absolute;
+      width: 2200px;
+      height: 300px;
+      bottom: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse 80% 100% at 50% 0%, rgba(147, 80, 220, 0.08) 0%, rgba(212, 175, 55, 0.04) 40%, transparent 70%);
+      filter: blur(30px);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Panel wrapper for positioning labels */
+    .panel-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ===== FEATURE BADGES ===== */
+    .badges-section {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      margin: 80px 0 25px;
+    }
+
+    .badge {
+      padding: 18px 36px;
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: 50px;
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(10, 8, 25, 0.6));
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 500;
+      color: rgba(245, 240, 230, 0.9);
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(10px);
+    }
+
+    .badge-icon {
+      font-size: 24px;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer-section {
+      text-align: center;
+      margin-top: auto;
+      padding-top: 20px;
+    }
+
+    .footer-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #C0C0C0, #D4AF37, #FFD700, #D4AF37, #C0C0C0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .footer-divider {
+      width: 300px;
+      height: 1px;
+      margin: 18px auto;
+      background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
+    }
+
+    .footer-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 17px;
+      color: rgba(160, 160, 170, 0.5);
+      letter-spacing: 3px;
+    }
+
+    /* Floating decorative elements */
+    .deco-triangle {
+      position: absolute;
+      width: 0;
+      height: 0;
+      opacity: 0.12;
+      z-index: 5;
+    }
+
+    .deco-triangle-1 {
+      top: 18%;
+      left: 8%;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 26px solid #D4AF37;
+      transform: rotate(15deg);
+    }
+
+    .deco-triangle-2 {
+      top: 35%;
+      right: 6%;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 20px solid #9B59B6;
+      transform: rotate(-25deg);
+    }
+
+    .deco-triangle-3 {
+      bottom: 28%;
+      left: 5%;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 17px solid #D4AF37;
+      transform: rotate(45deg);
+    }
+
+    .deco-hexagon {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      opacity: 0.08;
+      z-index: 5;
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    }
+
+    .deco-hex-1 {
+      top: 25%;
+      right: 10%;
+      background: #D4AF37;
+    }
+
+    .deco-hex-2 {
+      bottom: 35%;
+      left: 7%;
+      background: #9B59B6;
+      width: 22px;
+      height: 22px;
+    }
+
+    .deco-hex-3 {
+      top: 55%;
+      right: 5%;
+      background: #D4AF37;
+      width: 18px;
+      height: 18px;
+    }
+
+    .deco-dot {
+      position: absolute;
+      border-radius: 50%;
+      z-index: 5;
+    }
+
+    .deco-dot-1 {
+      top: 15%;
+      right: 15%;
+      width: 6px;
+      height: 6px;
+      background: #D4AF37;
+      opacity: 0.25;
+    }
+
+    .deco-dot-2 {
+      top: 30%;
+      left: 12%;
+      width: 4px;
+      height: 4px;
+      background: #9B59B6;
+      opacity: 0.3;
+    }
+
+    .deco-dot-3 {
+      bottom: 20%;
+      right: 12%;
+      width: 5px;
+      height: 5px;
+      background: #FFD700;
+      opacity: 0.2;
+    }
+
+    .deco-dot-4 {
+      top: 60%;
+      left: 6%;
+      width: 3px;
+      height: 3px;
+      background: #c9a0ff;
+      opacity: 0.25;
+    }
+
+    /* Ambient purple orbs */
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      z-index: 1;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+
+    .ambient-orb-1 {
+      width: 400px;
+      height: 400px;
+      top: 5%;
+      left: -5%;
+      background: rgba(123, 47, 190, 0.08);
+    }
+
+    .ambient-orb-2 {
+      width: 350px;
+      height: 350px;
+      top: 10%;
+      right: -3%;
+      background: rgba(147, 80, 220, 0.06);
+    }
+
+    .ambient-orb-3 {
+      width: 500px;
+      height: 300px;
+      bottom: 15%;
+      left: 30%;
+      background: rgba(100, 40, 180, 0.05);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Background layers -->
+  <div class="bg-gradient"></div>
+  <div class="bg-noise"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-hex"></div>
+  <div class="bg-streak-1"></div>
+  <div class="bg-streak-2"></div>
+
+  <!-- Ambient orbs -->
+  <div class="ambient-orb ambient-orb-1"></div>
+  <div class="ambient-orb ambient-orb-2"></div>
+  <div class="ambient-orb ambient-orb-3"></div>
+
+  <!-- Frame & corners -->
+  <div class="poster-frame"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <!-- Decorative elements -->
+  <div class="deco-triangle deco-triangle-1"></div>
+  <div class="deco-triangle deco-triangle-2"></div>
+  <div class="deco-triangle deco-triangle-3"></div>
+  <div class="deco-hexagon deco-hex-1"></div>
+  <div class="deco-hexagon deco-hex-2"></div>
+  <div class="deco-hexagon deco-hex-3"></div>
+  <div class="deco-dot deco-dot-1"></div>
+  <div class="deco-dot deco-dot-2"></div>
+  <div class="deco-dot deco-dot-3"></div>
+  <div class="deco-dot deco-dot-4"></div>
+
+  <!-- Main Content -->
+  <div class="content">
+
+    <!-- TOP - Shield & Title -->
+    <div class="top-section">
+      <div class="shield-icon">
+        <svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="shieldGrad" x1="50" y1="0" x2="50" y2="120" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#FFD700" />
+              <stop offset="50%" stop-color="#D4AF37" />
+              <stop offset="100%" stop-color="#B8941F" />
+            </linearGradient>
+          </defs>
+          <path d="M50 5 L90 25 L90 65 Q90 95 50 115 Q10 95 10 65 L10 25 Z" stroke="url(#shieldGrad)" stroke-width="3"
+            fill="rgba(212,175,55,0.08)" />
+          <path d="M50 15 L80 30 L80 62 Q80 88 50 105 Q20 88 20 62 L20 30 Z" stroke="rgba(212,175,55,0.3)"
+            stroke-width="1" fill="none" />
+          <!-- Lock icon -->
+          <rect x="38" y="55" width="24" height="20" rx="3" stroke="url(#shieldGrad)" stroke-width="2.5"
+            fill="rgba(212,175,55,0.1)" />
+          <path d="M43 55 L43 45 Q43 38 50 38 Q57 38 57 45 L57 55" stroke="url(#shieldGrad)" stroke-width="2.5"
+            fill="none" />
+          <circle cx="50" cy="65" r="3" fill="#D4AF37" />
+        </svg>
+      </div>
+      <h1 class="main-title">GENAI GATEWAY</h1>
+      <p class="subtitle">Yapay Zeka Altyapınız İçin Yeni Nesil Kalkan</p>
+      <div class="divider"></div>
+    </div>
+
+    <!-- HERO - Globe/Sphere -->
+    <div class="hero-section">
+      <div class="sphere-glow"></div>
+      <div class="light-rays"></div>
+
+      <!-- Orbital rings -->
+      <div class="orbital-ring orbital-ring-1"></div>
+      <div class="orbital-ring orbital-ring-2"></div>
+
+      <!-- Floating particles -->
+      <div class="particle particle-gold" style="width:8px;height:8px;top:15%;left:20%;animation-delay:0s;"></div>
+      <div class="particle particle-purple" style="width:10px;height:10px;top:25%;right:15%;animation-delay:0.5s;">
+      </div>
+      <div class="particle particle-gold" style="width:6px;height:6px;bottom:20%;left:15%;animation-delay:1s;"></div>
+      <div class="particle particle-purple" style="width:7px;height:7px;bottom:25%;right:20%;animation-delay:1.5s;">
+      </div>
+      <div class="particle particle-gold" style="width:5px;height:5px;top:40%;left:8%;animation-delay:2s;"></div>
+      <div class="particle particle-gold" style="width:4px;height:4px;top:60%;right:10%;animation-delay:0.8s;"></div>
+
+      <!-- Main sphere -->
+      <div class="sphere">
+        <div class="sphere-circuits"></div>
+      </div>
+    </div>
+
+    <!-- Summary Text -->
+    <div class="summary-section">
+      <p class="summary-text">
+        <strong>GenAI Security Gateway</strong>, yapay zeka sistemlerine gönderilen istemleri <em>prompt injection</em>
+        saldırılarına ve <strong>DLP veri sızıntılarına</strong> karşı koruyan <strong>3 katmanlı hibrit güvenlik
+          mimarisidir</strong>.
+      </p>
+    </div>
+
+    <!-- 3 Screenshot Panels in Tablet Frames -->
+    <div class="panels-section">
+
+      <!-- Left Panel - Dashboard (Yönetici Paneli) -->
+      <div class="panel-wrapper">
+        <div class="tablet-frame tablet-left">
+          <img src="poster_assets/dashboard.png" alt="Yönetici Paneli - Dashboard">
+        </div>
+        <span class="panel-label panel-label-dashboard">📊 Yönetici Paneli</span>
+      </div>
+
+      <!-- Center Panel - Chat (GenAI ile Sohbet) -->
+      <div class="panel-wrapper">
+        <div class="tablet-frame tablet-center">
+          <img src="poster_assets/chat.png" alt="GenAI ile Sohbet Edin">
+        </div>
+        <span class="panel-label panel-label-chat">💬 GenAI ile Sohbet Edin</span>
+      </div>
+
+      <!-- Right Panel - DLP (Veri Kaybı Önleme) -->
+      <div class="panel-wrapper">
+        <div class="tablet-frame tablet-right">
+          <img src="poster_assets/dlp.png" alt="DLP - Veri Kaybı Önleme Sistemi">
+        </div>
+        <span class="panel-label panel-label-dlp">🛡️ DLP — Veri Kaybı Önleme</span>
+      </div>
+
+    </div>
+
+    <!-- Feature Badges -->
+    <div class="badges-section">
+      <div class="badge">
+        <span class="badge-icon">⚡</span>
+        <span>Prompt Guard</span>
+      </div>
+      <div class="badge">
+        <span class="badge-icon">🔄</span>
+        <span>Real-Time</span>
+      </div>
+      <div class="badge">
+        <span class="badge-icon">🧠</span>
+        <span>Deep Learning</span>
+      </div>
+      <div class="badge">
+        <span class="badge-icon">🔒</span>
+        <span>Zero Trust</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-section">
+      <p class="footer-text">Yapay Zeka • Siber Güvenlik • Kurumsal Güvenilirlik</p>
+      <div class="footer-divider"></div>
+      <p class="footer-sub">GenAI Security Gateway — Enterprise AI Protection Platform</p>
+    </div>
+
+  </div>
+
+</body>
+
+</html>

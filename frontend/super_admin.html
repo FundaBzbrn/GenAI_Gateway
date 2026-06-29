@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Gateway – Super Admin Paneli</title>
+    <meta name="description" content="GenAI Gateway kurucu yönetici paneli – şirket ve sistem yönetimi.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css?v=20">
+
+    <style>
+        /* ── SUPER ADMIN SPECIFIC OVERRIDES ── */
+
+        /* Body / page base */
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Aurora always visible */
+        .aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .aurora-blob {
+            position: absolute; border-radius: 50%;
+            filter: blur(120px); opacity: 0.22;
+            animation: drift 20s ease-in-out infinite alternate;
+        }
+        .a1 { width: 700px; height: 700px; background: #6D28D9; top: -250px; left: -120px; }
+        .a2 { width: 550px; height: 550px; background: #5B21B6; bottom: -180px; right: -120px; animation-delay: -7s; }
+        .a3 { width: 350px; height: 350px; background: #7C3AED; top: 30%; left: 45%; opacity: 0.1; animation-delay: -13s; }
+        @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(50px,35px) scale(1.1); } }
+        [data-theme="light"] .aurora-blob { opacity: 0.05; }
+
+        /* Page wrapper */
+        .sa-page {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ══ TOP BAR ══ */
+        .sa-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(19,17,28,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            padding: 0 36px;
+            height: 66px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        [data-theme="light"] .sa-topbar {
+            background: rgba(255,255,255,0.88);
+            border-bottom-color: rgba(0,0,0,0.08);
+        }
+
+        .sa-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .sa-crown-orb {
+            width: 38px; height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #F59E0B, #D97706, #92400E);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 18px rgba(245,158,11,0.5);
+            flex-shrink: 0;
+        }
+
+        .sa-brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sa-brand-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 30%, #FDE68A 70%, #F59E0B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        [data-theme="light"] .sa-brand-title {
+            background: linear-gradient(135deg, #0f0f1a 40%, #D97706);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .sa-brand-sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .sa-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ── Theme toggle button (topbar) ── */
+        .sa-tb-btn {
+            display: flex; align-items: center; gap: 7px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .sa-tb-btn:hover {
+            background: rgba(157,110,248,0.12);
+            border-color: rgba(157,110,248,0.4);
+            color: #C4B5FD;
+        }
+
+        .sa-dashboard-btn {
+            background: rgba(157,110,248,0.08);
+            border-color: rgba(157,110,248,0.3);
+            color: #C4B5FD;
+        }
+
+        .sa-dashboard-btn:hover {
+            background: rgba(157,110,248,0.18);
+        }
+
+        .sa-logout-btn {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #F87171;
+            border-radius: 20px;
+            display: flex; align-items: center; gap: 7px;
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .sa-logout-btn:hover {
+            background: rgba(239,68,68,0.22);
+            border-color: rgba(239,68,68,0.5);
+        }
+
+        /* Yarı-Canlı Mod aktif durumu */
+        .sa-tb-btn.sa-live-active {
+            border-color: #10B981 !important;
+            color: #10B981 !important;
+            background: rgba(16,185,129,0.12) !important;
+            box-shadow: 0 0 0 1px rgba(16,185,129,0.2), 0 4px 12px rgba(16,185,129,0.18);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sa-tb-btn.sa-live-active::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 60%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(16,185,129,0.2), transparent);
+            animation: saLiveSweep 2s linear infinite;
+        }
+
+        @keyframes saLiveSweep {
+            0%   { left: -60%; }
+            100% { left: 140%; }
+        }
+
+        .sa-tb-btn.sa-live-active #saLiveIcon {
+            animation: saSpin 1.8s linear infinite;
+        }
+
+        @keyframes saSpin { 100% { transform: rotate(360deg); } }
+
+        /* ══ CONTENT AREA ══ */
+        .sa-content {
+            padding: 36px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* ══ PAGE HEADING ══ */
+        .sa-page-heading {
+            margin-bottom: 32px;
+        }
+
+        .sa-page-heading h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 35%, #FDE68A 65%, #F59E0B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+
+        [data-theme="light"] .sa-page-heading h1 {
+            background: linear-gradient(135deg, #0f0f1a 40%, #D97706);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .sa-page-heading p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* ══ STATS GRID ══ */
+        .sa-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .sa-stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 22px 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s cubic-bezier(0.25,0.8,0.25,1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .sa-stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 3px;
+            background: linear-gradient(90deg, #F59E0B, transparent);
+        }
+
+        .sa-stat-card.red::before  { background: linear-gradient(90deg, #EF4444, transparent); }
+        .sa-stat-card.green::before { background: linear-gradient(90deg, #10B981, transparent); }
+        .sa-stat-card.purple::before { background: linear-gradient(90deg, #9D6EF8, transparent); }
+
+        .sa-stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+        }
+
+        .sa-stat-card h3 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .sa-stat-val {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+
+        .sa-stat-card.red .sa-stat-val   { color: #F87171; }
+        .sa-stat-card.green .sa-stat-val { color: #34D399; }
+        .sa-stat-card.purple .sa-stat-val { color: #C4B5FD; }
+
+        .sa-stat-icon {
+            position: absolute;
+            top: 20px; right: 20px;
+            opacity: 0.18;
+            color: var(--text-main);
+        }
+
+        /* ══ 2-COLUMN GRID ══ */
+        .sa-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* ══ CARDS ══ */
+        .sa-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px 28px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transition: all 0.25s;
+        }
+
+        .sa-card:hover {
+            box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+        }
+
+        .sa-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sa-card-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .sa-card-header i {
+            color: var(--primary);
+        }
+
+        .sa-section-divider {
+            border: 0;
+            border-top: 1px solid var(--border);
+            margin: 24px 0;
+        }
+
+        .sa-sub-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .sa-sub-header h4 {
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        .sa-sub-header h4::after {
+            content: '';
+            display: inline-block;
+            width: 40px;
+            height: 1px;
+            background: var(--border);
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* ══ TABLE ══ */
+        .sa-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .sa-table th {
+            padding: 11px 14px;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .sa-table td {
+            padding: 13px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.88rem;
+            color: var(--text-main);
+        }
+
+        [data-theme="light"] .sa-table td {
+            border-bottom-color: rgba(0,0,0,0.04);
+        }
+
+        .sa-table tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .sa-table tbody tr:hover {
+            background: rgba(157,110,248,0.08);
+        }
+
+        /* Company ID badge */
+        .company-id {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: rgba(157,110,248,0.12);
+            border: 1px solid rgba(157,110,248,0.2);
+            color: #C4B5FD;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        /* Role badge */
+        .role-admin { color: #F87171; font-weight: 700; font-size: 0.8rem; }
+        .role-emp   { color: #60A5FA; font-weight: 600; font-size: 0.8rem; }
+
+        /* ══ FORMS ══ */
+        .sa-form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .sa-form-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+        }
+
+        .sa-input {
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+            transition: all 0.25s;
+        }
+
+        .sa-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+        .sa-input:focus {
+            border-color: rgba(157,110,248,0.5);
+            box-shadow: 0 0 0 3px rgba(157,110,248,0.12);
+        }
+
+        select.sa-input option {
+            background-color: #13111C;
+            color: white;
+        }
+
+        [data-theme="light"] select.sa-input option {
+            background-color: #ffffff;
+            color: #0f0f1a;
+        }
+
+        .sa-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border-radius: 14px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.25,0.8,0.25,1);
+            border: none;
+        }
+
+        .sa-btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(157,110,248,0.4);
+        }
+
+        .sa-btn-primary:hover {
+            background: var(--primary-2);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 22px rgba(157,110,248,0.5);
+        }
+
+        .sa-btn-gold {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(245,158,11,0.4);
+        }
+
+        .sa-btn-gold:hover {
+            background: linear-gradient(135deg, #FBBF24, #F59E0B);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 22px rgba(245,158,11,0.5);
+        }
+
+        /* ══ LOG BADGES ══ */
+        .log-badge-block {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(239,68,68,0.14);
+            color: #F87171;
+            border: 1px solid rgba(239,68,68,0.25);
+        }
+
+        /* ══ MODAL ══ */
+        .sa-modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .sa-modal-overlay.show { display: flex; animation: fadeIn 0.25s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+
+        .sa-modal-inner {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(157,110,248,0.2);
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 1080px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow:
+                0 32px 80px rgba(0,0,0,0.5),
+                0 0 0 1px rgba(255,255,255,0.04) inset;
+        }
+
+        .sa-modal-inner::-webkit-scrollbar { width: 4px; }
+        .sa-modal-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .sa-modal-close {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .sa-modal-close:hover {
+            background: rgba(239,68,68,0.12);
+            border-color: rgba(239,68,68,0.3);
+            color: #F87171;
+        }
+
+        .sa-modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #FDE68A 60%, #F59E0B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sa-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .sa-modal-section h3 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sa-modal-section h3::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Chart container in modal */
+        .sa-chart-wrapper {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            height: 280px;
+            position: relative;
+        }
+
+        .sa-stats-text {
+            margin-top: 12px;
+            font-size: 0.83rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .sa-stats-text span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sa-grid-2   { grid-template-columns: 1fr; }
+            .sa-modal-grid { grid-template-columns: 1fr; }
+            .sa-content  { padding: 20px; }
+            .sa-topbar   { padding: 0 20px; }
+        }
+
+        @media (max-width: 600px) {
+            .sa-stats { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── AURORA BACKGROUND ── -->
+    <div class="aurora">
+        <div class="aurora-blob a1"></div>
+        <div class="aurora-blob a2"></div>
+        <div class="aurora-blob a3"></div>
+    </div>
+
+    <div class="sa-page">
+
+        <!-- ══════════════ TOP BAR ══════════════ -->
+        <header class="sa-topbar">
+            <div class="sa-brand">
+                <div class="sa-crown-orb">
+                    <i data-lucide="crown" style="width:18px;height:18px;color:#fff;"></i>
+                </div>
+                <div class="sa-brand-text">
+                    <span class="sa-brand-title">Super Admin Paneli</span>
+                    <span class="sa-brand-sub">GenAI Gateway · Kurucu Erişimi</span>
+                </div>
+            </div>
+
+            <div class="sa-topbar-actions">
+                <!-- Theme toggle -->
+                <button class="sa-tb-btn" id="saThemeBtn" title="Tema Değiştir">
+                    <i data-lucide="moon" id="saThemeIcon" style="width:15px;height:15px;"></i>
+                    <span id="saThemeTxt">Tema</span>
+                </button>
+                <!-- Dashboard link -->
+                <button class="sa-tb-btn sa-dashboard-btn" onclick="window.location.href='dashboard.html'">
+                    <i data-lucide="layout-dashboard" style="width:15px;height:15px;"></i>
+                    Dashboard
+                </button>
+                <!-- Yarı-Canlı Mod -->
+                <button class="sa-tb-btn" id="saLiveBtn" title="Otomatik yenileme (10 saniyede bir)">
+                    <i data-lucide="refresh-cw" id="saLiveIcon" style="width:15px;height:15px;"></i>
+                    <span id="saLiveTxt">Yarı-Canlı Mod</span>
+                </button>
+                <!-- Logout -->
+                <button class="sa-logout-btn" onclick="logout()">
+                    <i data-lucide="log-out" style="width:15px;height:15px;"></i>
+                    Çıkış Yap
+                </button>
+            </div>
+        </header>
+
+        <!-- ══════════════ CONTENT ══════════════ -->
+        <div class="sa-content">
+
+            <!-- Page heading -->
+            <div class="sa-page-heading">
+                <h1>Sistem Genel Bakışı</h1>
+                <p>Tüm şirketler ve kullanıcılara ait gerçek zamanlı istatistikler</p>
+            </div>
+
+            <!-- ── STATS ── -->
+            <div class="sa-stats">
+                <div class="sa-stat-card">
+                    <i data-lucide="activity" class="sa-stat-icon" style="width:40px;height:40px;"></i>
+                    <h3>Toplam İstek</h3>
+                    <div class="sa-stat-val" id="stTotal">0</div>
+                </div>
+                <div class="sa-stat-card red">
+                    <i data-lucide="shield-alert" class="sa-stat-icon" style="width:40px;height:40px;"></i>
+                    <h3>Toplam Sızıntı / Engellenen</h3>
+                    <div class="sa-stat-val" id="stBlocked">0</div>
+                </div>
+                <div class="sa-stat-card green">
+                    <i data-lucide="building-2" class="sa-stat-icon" style="width:40px;height:40px;"></i>
+                    <h3>Kayıtlı Şirket Sayısı</h3>
+                    <div class="sa-stat-val" id="stCompanies">0</div>
+                </div>
+                <div class="sa-stat-card purple">
+                    <i data-lucide="zap" class="sa-stat-icon" style="width:40px;height:40px;"></i>
+                    <h3>Sistem Ortalama Gecikme</h3>
+                    <div class="sa-stat-val" id="stLatency">0 ms</div>
+                </div>
+            </div>
+
+            <!-- ── 2-COL GRID ── -->
+            <div class="sa-grid-2">
+
+                <!-- Kayıtlı Şirketler -->
+                <div class="sa-card">
+                    <div class="sa-card-header">
+                        <i data-lucide="building" style="width:20px;height:20px;"></i>
+                        <h3>Kayıtlı Şirketler</h3>
+                        <span style="margin-left:auto;font-size:0.78rem;color:var(--text-muted);">Detay için satıra tıklayın</span>
+                    </div>
+                    <table class="sa-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Şirket Adı</th>
+                                <th>Domain</th>
+                                <th>Kayıt Tarihi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="companyTableBody">
+                            <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">Yükleniyor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Yeni Şirket + Admin Ata -->
+                <div class="sa-card">
+                    <!-- Yeni Şirket Oluştur -->
+                    <div class="sa-card-header">
+                        <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
+                        <h3>Yeni Şirket Oluştur</h3>
+                    </div>
+
+                    <form id="addCompanyForm">
+                        <div class="sa-form-field">
+                            <label class="sa-form-label">Şirket Adı *</label>
+                            <input type="text" id="compName" class="sa-input" placeholder="Örn: TechCorp" required>
+                        </div>
+                        <div class="sa-form-field" style="margin-bottom:20px;">
+                            <label class="sa-form-label">Şirket Domaini</label>
+                            <input type="text" id="compDomain" class="sa-input" placeholder="Örn: techcorp.com">
+                        </div>
+                        <button type="submit" class="sa-btn sa-btn-gold">
+                            <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                            Şirketi Kaydet
+                        </button>
+                    </form>
+
+                    <hr class="sa-section-divider">
+
+                    <!-- Şirket Yöneticisi Ata -->
+                    <div class="sa-sub-header">
+                        <i data-lucide="user-plus" style="width:17px;height:17px;color:var(--primary);"></i>
+                        <h4>Şirket Yöneticisi Ata</h4>
+                    </div>
+
+                    <form id="addAdminForm">
+                        <div class="sa-form-field">
+                            <label class="sa-form-label">Şirket *</label>
+                            <select id="selCompany" class="sa-input" required>
+                                <option value="">— Şirket Seç —</option>
+                            </select>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div class="sa-form-field">
+                                <label class="sa-form-label">Ad Soyad *</label>
+                                <input type="text" id="admFullName" class="sa-input" placeholder="Ad Soyad" required>
+                            </div>
+                            <div class="sa-form-field">
+                                <label class="sa-form-label">E-Posta *</label>
+                                <input type="email" id="admEmail" class="sa-input" placeholder="admin@sirket.com" required>
+                            </div>
+                            <div class="sa-form-field">
+                                <label class="sa-form-label">Telefon</label>
+                                <input type="tel" id="admPhone" class="sa-input" placeholder="+90 5xx xxx xx xx">
+                            </div>
+                            <div class="sa-form-field">
+                                <label class="sa-form-label">Kullanıcı Adı *</label>
+                                <input type="text" id="admUsername" class="sa-input" placeholder="kullanici_adi" required>
+                            </div>
+                        </div>
+                        <div class="sa-form-field" style="margin-bottom:20px;">
+                            <label class="sa-form-label">Şifre *</label>
+                            <input type="password" id="admPassword" class="sa-input" placeholder="Güçlü bir şifre belirleyin" required>
+                        </div>
+                        <button type="submit" class="sa-btn sa-btn-primary">
+                            <i data-lucide="user-check" style="width:16px;height:16px;"></i>
+                            Yönetici Ata
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ── GLOBAL LOGS ── -->
+            <div class="sa-card">
+                <div class="sa-card-header">
+                    <i data-lucide="shield-alert" style="width:20px;height:20px;color:#F87171;"></i>
+                    <h3>Tüm Şirketlerdeki Son Sızıntı Vakaları</h3>
+                    <span style="margin-left:auto;font-size:0.78rem;color:var(--text-muted);">Son 10 BLOCK kaydı</span>
+                </div>
+                <table class="sa-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih &amp; Saat</th>
+                            <th>Şirket ID</th>
+                            <th>Kullanıcı</th>
+                            <th>Maskelenmiş Prompt</th>
+                            <th>Kategori</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">Yükleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+        <!-- End sa-content -->
+
+    </div>
+    <!-- End sa-page -->
+
+    <!-- ══════════════ COMPANY DETAIL MODAL ══════════════ -->
+    <div id="companyDetailModal" class="sa-modal-overlay">
+        <div class="sa-modal-inner">
+            <button class="sa-modal-close" onclick="closeCompanyModal()">
+                <i data-lucide="x" style="width:16px;height:16px;"></i>
+            </button>
+
+            <div class="sa-modal-title">
+                <i data-lucide="building-2" style="width:22px;height:22px;color:#F59E0B;flex-shrink:0;"></i>
+                <span id="modalCompanyName">Şirket Detayları</span>
+            </div>
+
+            <div class="sa-modal-grid">
+                <!-- Kullanıcılar -->
+                <div class="sa-modal-section">
+                    <h3>Kullanıcılar</h3>
+                    <table class="sa-table">
+                        <thead>
+                            <tr>
+                                <th>Rol</th>
+                                <th>Ad Soyad</th>
+                                <th>Kullanıcı Adı</th>
+                                <th>E-Posta</th>
+                                <th>Telefon</th>
+                                <th>Kayıt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="companyUsersBody">
+                            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Yükleniyor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- İstatistik Grafiği -->
+                <div class="sa-modal-section">
+                    <h3>Sızıntı / İşlem İstatistiği</h3>
+                    <div class="sa-chart-wrapper">
+                        <canvas id="companyStatsChart"></canvas>
+                    </div>
+                    <div class="sa-stats-text" id="companyStatsText"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── THEME INIT ──
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+
+        lucide.createIcons();
+
+        const API_BASE = '/api/v1';
+
+        // ── THEME TOGGLE ──
+        const saThemeBtn = document.getElementById('saThemeBtn');
+        if (saThemeBtn) {
+            const syncIcon = () => {
+                const t = document.documentElement.getAttribute('data-theme');
+                const icon = document.getElementById('saThemeIcon');
+                if (icon) { icon.setAttribute('data-lucide', t === 'light' ? 'sun' : 'moon'); lucide.createIcons(); }
+            };
+            syncIcon();
+            saThemeBtn.addEventListener('click', () => {
+                const cur = document.documentElement.getAttribute('data-theme');
+                const next = cur === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                syncIcon();
+            });
+        }
+
+        // ── AUTH CHECK ──
+        const token = localStorage.getItem('token');
+        const role  = localStorage.getItem('role');
+
+        if (!token || role !== 'super_admin') {
+            window.location.href = '/login.html';
+        }
+
+        // ── FETCH STATS ──
+        async function fetchSuperStats() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/super/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                document.getElementById('stTotal').innerText    = data.total_requests || 0;
+                document.getElementById('stBlocked').innerText  = data.blocked || 0;
+                document.getElementById('stLatency').innerText  = (data.avg_latency_ms || 0) + ' ms';
+            } catch (err) { console.error(err); }
+        }
+
+        // ── FETCH COMPANIES ──
+        async function fetchCompanies() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/super/companies`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('companyTableBody');
+                const sel   = document.getElementById('selCompany');
+
+                tbody.innerHTML = '';
+                sel.innerHTML   = '<option value="">— Şirket Seç —</option>';
+
+                document.getElementById('stCompanies').innerText = data.companies ? data.companies.length : 0;
+
+                if (data.companies) {
+                    data.companies.forEach(c => {
+                        tbody.innerHTML += `
+                            <tr onclick="openCompanyModal(${c.id}, '${c.name.replace(/'/g, "\\'")}')">
+                                <td><span class="company-id">#${c.id}</span></td>
+                                <td style="font-weight:600;">${c.name}</td>
+                                <td style="color:var(--text-muted);">${c.domain || '—'}</td>
+                                <td style="color:var(--text-muted);">${new Date(c.created_at).toLocaleDateString('tr-TR')}</td>
+                            </tr>
+                        `;
+                        sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                    });
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // ── FETCH LOGS ──
+        async function fetchSuperLogs() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/super/logs?limit=10`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('logsTableBody');
+                tbody.innerHTML = '';
+
+                if (data.logs && data.logs.length) {
+                    let shown = 0;
+                    data.logs.forEach(l => {
+                        if (l.action === 'BLOCK') {
+                            shown++;
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td style="color:var(--text-muted);font-size:0.83rem;">${new Date(l.created_at).toLocaleString('tr-TR')}</td>
+                                    <td><span class="company-id">#${l.company_id || '—'}</span></td>
+                                    <td style="font-weight:500;">${l.user_id}</td>
+                                    <td style="color:#F87171;font-size:0.83rem;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.masked_prompt ? l.masked_prompt.substring(0, 60) + '...' : '—'}</td>
+                                    <td><span class="log-badge-block">${l.category}</span></td>
+                                </tr>
+                            `;
+                        }
+                    });
+                    if (shown === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">Sızıntı vakası bulunamadı.</td></tr>';
+                    }
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">Henüz kayıt yok.</td></tr>';
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // ── ADD COMPANY ──
+        document.getElementById('addCompanyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const orig = btn.innerHTML;
+            btn.innerHTML = 'Kaydediliyor...';
+            btn.disabled = true;
+            const name   = document.getElementById('compName').value;
+            const domain = document.getElementById('compDomain').value;
+            try {
+                await fetch(`${API_BASE}/admin/super/companies`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name, domain })
+                });
+                alert('Şirket başarıyla eklendi!');
+                document.getElementById('addCompanyForm').reset();
+                fetchCompanies();
+            } catch(e) { alert('Hata oluştu.'); }
+            finally { btn.innerHTML = orig; btn.disabled = false; }
+        });
+
+        // ── ADD ADMIN ──
+        document.getElementById('addAdminForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const orig = btn.innerHTML;
+            btn.innerHTML = 'Atanıyor...';
+            btn.disabled = true;
+            const company_id = document.getElementById('selCompany').value;
+            const full_name  = document.getElementById('admFullName').value;
+            const email      = document.getElementById('admEmail').value;
+            const phone      = document.getElementById('admPhone').value;
+            const username   = document.getElementById('admUsername').value;
+            const password   = document.getElementById('admPassword').value;
+            try {
+                const res = await fetch(`${API_BASE}/admin/super/company-admin?company_id=${company_id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ username, password, email, phone, full_name })
+                });
+                if (res.ok) {
+                    alert('Şirket Yöneticisi başarıyla atandı!');
+                    document.getElementById('addAdminForm').reset();
+                    window.location.reload();
+                } else {
+                    const d = await res.json();
+                    alert('Hata: ' + d.detail);
+                }
+            } catch(e) { alert('Hata oluştu.'); }
+            finally { btn.innerHTML = orig; btn.disabled = false; }
+        });
+
+        // ── LOGOUT ──
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            window.location.href = '/login.html';
+        }
+
+        // ── COMPANY DETAIL MODAL ──
+        let currentChart = null;
+
+        async function openCompanyModal(companyId, companyName) {
+            const modal = document.getElementById('companyDetailModal');
+            modal.classList.add('show');
+            document.getElementById('modalCompanyName').innerText = companyName;
+            document.getElementById('companyUsersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Yükleniyor...</td></tr>';
+            document.getElementById('companyStatsText').innerHTML = '';
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/super/company-details/${companyId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Veri çekilemedi');
+                const data = await res.json();
+
+                // Kullanıcılar
+                const tbody = document.getElementById('companyUsersBody');
+                tbody.innerHTML = '';
+                if (data.users && data.users.length > 0) {
+                    data.users.forEach(u => {
+                        const isAdmin  = u.role === 'company_admin';
+                        const roleHtml = isAdmin
+                            ? '<span class="role-admin">Yönetici</span>'
+                            : '<span class="role-emp">Çalışan</span>';
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${roleHtml}</td>
+                                <td style="font-weight:500;">${u.full_name || '—'}</td>
+                                <td style="color:var(--text-muted);">${u.username}</td>
+                                <td style="color:var(--text-muted);font-size:0.83rem;">${u.email || '—'}</td>
+                                <td style="color:var(--text-muted);font-size:0.83rem;">${u.phone || '—'}</td>
+                                <td style="color:var(--text-muted);font-size:0.8rem;">${new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-muted);">Bu şirkette henüz kullanıcı yok.</td></tr>';
+                }
+
+                // Grafik
+                try {
+                    const stats = data.stats || { allowed: 0, blocked: 0, total_requests: 0 };
+                    const ctx = document.getElementById('companyStatsChart').getContext('2d');
+                    if (currentChart) currentChart.destroy();
+
+                    Chart.defaults.color = '#7C7A88';
+                    currentChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Engellenen', 'İzin Verilen'],
+                            datasets: [{
+                                data: [stats.blocked, stats.allowed],
+                                backgroundColor: ['#EF4444', '#10B981'],
+                                borderWidth: 0,
+                                hoverOffset: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '65%',
+                            plugins: {
+                                legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Outfit', size: 12 } } }
+                            }
+                        }
+                    });
+
+                    document.getElementById('companyStatsText').innerHTML = `
+                        <span>📊 Toplam: <strong>${stats.total_requests}</strong></span>
+                        <span style="color:#F87171;">🚫 Engellenen: <strong>${stats.blocked}</strong></span>
+                        <span style="color:#34D399;">✅ İzin: <strong>${stats.allowed}</strong></span>
+                    `;
+                } catch(chartErr) {
+                    console.error('Grafik hatası:', chartErr);
+                    document.getElementById('companyStatsText').innerText = 'Grafik yüklenemedi.';
+                }
+
+                lucide.createIcons();
+
+            } catch(e) {
+                console.error(e);
+                document.getElementById('companyUsersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Veri yüklenirken hata oluştu.</td></tr>';
+            }
+        }
+
+        function closeCompanyModal() {
+            document.getElementById('companyDetailModal').classList.remove('show');
+        }
+
+        // Click outside to close
+        document.getElementById('companyDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCompanyModal();
+        });
+
+        // ── INIT ──
+        fetchSuperStats();
+        fetchCompanies();
+        fetchSuperLogs();
+
+        // ══════════════════════════════════════════════════════
+        //  YARI-CANLI MOD — Super Admin için otomatik yenileme
+        // ══════════════════════════════════════════════════════
+        (function() {
+            const LIVE_MS  = 10000; // 10 saniye
+            let _timer     = null;
+            let _tickTimer = null;
+            let _countdown = LIVE_MS / 1000;
+
+            const btn  = document.getElementById('saLiveBtn');
+            const txt  = document.getElementById('saLiveTxt');
+            const icon = document.getElementById('saLiveIcon');
+
+            if (!btn) return;
+
+            async function saRefreshAll() {
+                await Promise.all([fetchSuperStats(), fetchCompanies(), fetchSuperLogs()]);
+                _countdown = LIVE_MS / 1000;
+                updateTxt();
+            }
+
+            function updateTxt() {
+                if (!_timer) { txt.innerText = 'Yarı-Canlı Mod'; return; }
+                const s = _countdown <= 0 ? '⟳' : `${_countdown}s`;
+                txt.innerText = `Canlı: ${s}`;
+            }
+
+            function startSaLive() {
+                btn.classList.add('sa-live-active');
+                _countdown = LIVE_MS / 1000;
+                saRefreshAll();
+
+                _tickTimer = setInterval(() => {
+                    _countdown--;
+                    if (_countdown < 0) _countdown = LIVE_MS / 1000;
+                    updateTxt();
+                }, 1000);
+
+                _timer = setInterval(() => {
+                    _countdown = LIVE_MS / 1000;
+                    saRefreshAll();
+                }, LIVE_MS);
+
+                updateTxt();
+            }
+
+            function stopSaLive() {
+                clearInterval(_timer);
+                clearInterval(_tickTimer);
+                _timer = null; _tickTimer = null;
+                _countdown = LIVE_MS / 1000;
+                btn.classList.remove('sa-live-active');
+                updateTxt();
+                lucide.createIcons();
+            }
+
+            btn.addEventListener('click', () => {
+                if (_timer) stopSaLive(); else startSaLive();
+            });
+        })();
+    </script>
+</body>
+</html>

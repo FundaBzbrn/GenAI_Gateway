@@ -1,0 +1,17 @@
+{
+    "layer_regex": true,
+    "layer_deberta": true,
+    "layer_llm": true,
+    "ai_threshold": 0.65,
+    "blacklist": [
+        "bomba",
+        "intihar",
+        "hack",
+        "sql_injection",
+        "bypass",
+        "ölüm",
+        "saldırı",
+        "uyuşturucu",
+        "malware"
+    ]
+}

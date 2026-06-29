@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Gateway – SOC Dashboard</title>
+    <meta name="description" content="GenAI Gateway güvenlik operasyon merkezi – gerçek zamanlı tehdit tespiti ve log analizi.">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css?v=20">
+</head>
+
+<body>
+
+    <!-- ── AURORA BACKGROUND ── -->
+    <div class="aurora">
+        <div class="aurora-blob a1"></div>
+        <div class="aurora-blob a2"></div>
+        <div class="aurora-blob a3"></div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="notification-area"></div>
+
+    <div class="dashboard-wrapper">
+
+        <!-- ══════════════ SIDEBAR ══════════════ -->
+        <aside class="sidebar" id="appSidebar">
+            <div class="logo">
+                <div class="logo-orb">
+                    <i data-lucide="shield-check" style="width:16px;height:16px;color:#fff;"></i>
+                </div>
+                <h2>GenAI Gateway</h2>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" id="nav-dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" id="nav-logs">
+                    <i data-lucide="scroll-text"></i>
+                    <span>Log Kayıtları</span>
+                </a>
+                <a href="#" class="nav-item" id="nav-users" style="display: none;">
+                    <i data-lucide="users-round"></i>
+                    <span>Kullanıcı Yönetimi</span>
+                </a>
+                <a href="#" class="nav-item" id="nav-profiles" style="display: none;">
+                    <i data-lucide="contact"></i>
+                    <span>Çalışan Profilleri</span>
+                </a>
+                <a href="#" class="nav-item" id="nav-settings" style="display: none;">
+                    <i data-lucide="shield-cog"></i>
+                    <span>Güvenlik Kuralları</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="pulse"></span>
+                    Sistem Aktif
+                </div>
+            </div>
+        </aside>
+
+        <!-- ══════════════ MAIN CONTENT ══════════════ -->
+        <main class="main-content">
+
+            <!-- ── TOP BAR ── -->
+            <header class="topbar" id="appTopbar">
+                <div class="header-titles">
+                    <h1>Yönetici Paneli</h1>
+                    <p class="subtitle">Gerçek zamanlı tehdit ve sızıntı tespit analizi</p>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-outline" id="themeToggleBtn">
+                        <i data-lucide="moon" id="themeIcon" style="width:15px;height:15px;"></i>
+                        <span id="themeBtnText">Tema</span>
+                    </button>
+                    <button class="btn btn-outline" id="startFrontendBtn" style="background: var(--primary); color: white; border-color: transparent; box-shadow: 0 4px 14px var(--primary-glow);">
+                        <i data-lucide="message-circle" style="width:15px;height:15px;"></i>
+                        <span>Sohbet Arayüzü</span>
+                    </button>
+                    <button class="btn btn-outline" id="refreshBtn">
+                        <i data-lucide="refresh-cw" style="width:15px;height:15px;"></i>
+                        <span>Yarı-Canlı Mod</span>
+                    </button>
+                    <button class="btn btn-outline" id="loginBtn" style="color: var(--primary); border-color: rgba(157,110,248,0.4);">
+                        <i data-lucide="log-in" style="width:15px;height:15px;"></i>
+                        <span>Giriş Yap</span>
+                    </button>
+                    <button class="btn btn-outline" id="logoutBtn" style="color: #F87171; border-color: rgba(239,68,68,0.35); display: none;">
+                        <i data-lucide="log-out" style="width:15px;height:15px;"></i>
+                        <span>Çıkış</span>
+                    </button>
+                    <div style="position: relative;">
+                        <div class="user-profile" id="userProfileIcon">US</div>
+                        <div id="profileDropdown" class="glass" style="display: none; position: absolute; top: 50px; right: 0; width: 220px; border-radius: 14px; padding: 8px; flex-direction: column; gap: 2px; z-index: 100;">
+                            <button id="btnEditProfile" class="btn btn-outline" style="width: 100%; justify-content: flex-start; border: none; padding: 10px 14px; border-radius: 10px; font-size: 0.87rem;">
+                                <i data-lucide="user" style="width:15px;height:15px;"></i> Profil Bilgileri
+                            </button>
+                            <button id="btnChangePassword" class="btn btn-outline" style="width: 100%; justify-content: flex-start; border: none; padding: 10px 14px; border-radius: 10px; font-size: 0.87rem;">
+                                <i data-lucide="key" style="width:15px;height:15px;"></i> Şifre Değiştir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ════════════════════════════════
+                 DASHBOARD VIEW
+                 ════════════════════════════════ -->
+            <div id="view-dashboard" class="page-view active">
+
+                <!-- Stats Grid -->
+                <section class="stats-grid">
+                    <div class="stat-card glass">
+                        <div class="stat-header">
+                            <h3>Toplam İstek</h3>
+                            <i data-lucide="activity"></i>
+                        </div>
+                        <div class="stat-value" id="valTotal">0</div>
+                    </div>
+                    <div class="stat-card glass danger">
+                        <div class="stat-header">
+                            <h3>Engellenen</h3>
+                            <i data-lucide="shield-alert"></i>
+                        </div>
+                        <div class="stat-value" id="valBlocked">0</div>
+                    </div>
+                    <div class="stat-card glass success">
+                        <div class="stat-header">
+                            <h3>İzin Verilen</h3>
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <div class="stat-value" id="valAllowed">0</div>
+                    </div>
+                    <div class="stat-card glass warning">
+                        <div class="stat-header">
+                            <h3>Ortalama Gecikme</h3>
+                            <i data-lucide="zap"></i>
+                        </div>
+                        <div class="stat-value" id="valLatency">0ms</div>
+                    </div>
+                </section>
+
+                <!-- Charts Area -->
+                <section class="charts-area">
+                    <div class="chart-card glass">
+                        <div class="card-header">
+                            <h3>Karar Dağılımı</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="ratioChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card glass">
+                        <div class="card-header">
+                            <h3>Güvenlik Olayları Kategorileri</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recent Logs Table -->
+                <section class="logs-section glass">
+                    <div class="card-header">
+                        <h3>Son İşlemler</h3>
+                        <a href="#" class="view-all">Tümünü Gör →</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Zaman</th>
+                                    <th>Kullanıcı ID</th>
+                                    <th>Prompt (Maskeli)</th>
+                                    <th>Katman</th>
+                                    <th>Kategori</th>
+                                    <th>Karar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center" style="padding: 2.5rem; color: var(--text-muted);">
+                                        Veriler yükleniyor...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+            <!-- End Dashboard View -->
+
+            <!-- ════════════════════════════════
+                 LOGS FULL PAGE VIEW
+                 ════════════════════════════════ -->
+            <div id="view-logs" class="page-view">
+
+                <section class="filters-section glass">
+                    <div class="filter-group">
+                        <button class="filter-pill" data-action="BLOCK">
+                            <i data-lucide="shield-x" style="width:13px;height:13px;"></i> Engellenenler
+                        </button>
+                        <button class="filter-pill" data-action="ALLOW">
+                            <i data-lucide="shield-check" style="width:13px;height:13px;"></i> İzin Verilenler
+                        </button>
+
+                        <div class="filter-divider"></div>
+
+                        <button class="filter-pill" data-category="Safe">Safe (Güvenli)</button>
+                        <button class="filter-pill" data-category="Injection">Injection</button>
+                        <button class="filter-pill" data-category="PII">Hassas Veri (PII)</button>
+                        <button class="filter-pill" data-category="Blacklist">Kara Liste</button>
+
+                        <button id="applyFiltersBtn" class="btn btn-outline filter-apply-btn">
+                            <i data-lucide="filter" style="width:14px;height:14px;"></i> Filtrele
+                        </button>
+                    </div>
+                </section>
+
+                <section class="logs-section glass">
+                    <div class="card-header">
+                        <h3>Detaylı Log Tablosu</h3>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Detayı görmek için satıra tıklayın</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="logs-table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Log ID</th>
+                                    <th>Zaman</th>
+                                    <th>Kullanıcı ID</th>
+                                    <th>Katman</th>
+                                    <th>Kategori</th>
+                                    <th>Karar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fullLogsTableBody">
+                                <!-- JS ile doldurulacak -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+            <!-- End Logs View -->
+
+            <!-- ════════════════════════════════
+                 USERS VIEW (Company Admin Only)
+                 ════════════════════════════════ -->
+            <div id="view-users" class="page-view">
+                <div class="view-page-card glass">
+                    <div class="page-header">
+                        <div>
+                            <h2>
+                                <i data-lucide="users-round" style="width:22px;height:22px;"></i>
+                                Çalışan Yönetimi
+                            </h2>
+                            <p class="page-subtitle">Yeni çalışan ekleyin ve mevcut kayıtları yönetin</p>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Yeni Çalışan Ekle</div>
+
+                    <form id="addEmployeeForm">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label class="form-label">Kullanıcı Adı *</label>
+                                <input type="text" id="empUsername" class="form-input" placeholder="kullanici_adi" required>
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Ad Soyad</label>
+                                <input type="text" id="empFullName" class="form-input" placeholder="Ad ve soyadı girin">
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Departman</label>
+                                <input type="text" id="empDepartment" class="form-input" placeholder="Departman adı">
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">E-Posta</label>
+                                <input type="email" id="empEmail" class="form-input" placeholder="eposta@sirket.com">
+                            </div>
+                        </div>
+
+                        <div class="form-field" style="margin-bottom: 24px;">
+                            <label class="form-label">Şifre *</label>
+                            <input type="password" id="empPassword" class="form-input" placeholder="Güçlü bir şifre belirleyin" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="padding: 12px 28px; font-size: 0.95rem; border-radius: 14px;">
+                            <i data-lucide="user-plus" style="width:17px;height:17px;"></i>
+                            Çalışanı Kaydet
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <!-- End Users View -->
+
+            <!-- ════════════════════════════════
+                 PROFILES VIEW
+                 ════════════════════════════════ -->
+            <div id="view-profiles" class="page-view">
+                <div class="view-page-card glass">
+                    <div class="page-header">
+                        <div>
+                            <h2>
+                                <i data-lucide="contact" style="width:22px;height:22px;"></i>
+                                Çalışan Profilleri
+                            </h2>
+                            <p class="page-subtitle">Kayıtlı tüm çalışanların profil bilgileri</p>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="logs-table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Adı Soyadı</th>
+                                    <th>Kullanıcı Adı</th>
+                                    <th>Departman</th>
+                                    <th>E-Mail</th>
+                                    <th>İşe Giriş Tarihi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="profilesTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center" style="padding: 2.5rem; color: var(--text-muted);">
+                                        Veriler yükleniyor...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- End Profiles View -->
+
+            <!-- ════════════════════════════════
+                 SECURITY RULES / SETTINGS VIEW
+                 ════════════════════════════════ -->
+            <div id="view-settings" class="page-view">
+                <div class="rules-container glass">
+                    <div class="page-header" style="border-bottom: 1px solid var(--border); margin-bottom: 28px; padding-bottom: 20px;">
+                        <div>
+                            <h2>
+                                <i data-lucide="shield-cog" style="width:22px;height:22px;"></i>
+                                Güvenlik Kuralları
+                            </h2>
+                            <p class="page-subtitle">Katman yönetimi, eşik değerleri ve yasaklı kelime listesi</p>
+                        </div>
+                    </div>
+
+                    <!-- Layer Management -->
+                    <div class="settings-group">
+                        <h3 class="settings-title">Katman Yönetimi</h3>
+                        <div class="toggle-card">
+                            <div class="toggle-info">
+                                <span class="layer-status" id="stsL1">OFF</span>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.92rem;">Katman 1 – Regex &amp; Blacklist</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Kural tabanlı hızlı filtreleme</div>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="tglLayer1">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-card">
+                            <div class="toggle-info">
+                                <span class="layer-status" id="stsL2">OFF</span>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.92rem;">Katman 2 – DeBERTa AI Modeli</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Derin öğrenme tabanlı sınıflandırma</div>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="tglLayer2">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-card">
+                            <div class="toggle-info">
+                                <span class="layer-status" id="stsL3">OFF</span>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.92rem;">Katman 3 – LLM Yargıç</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Büyük dil modeli ile son kontrol</div>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="tglLayer3">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr class="separator">
+
+                    <!-- AI Threshold -->
+                    <div class="settings-group">
+                        <h3 class="settings-title">Yapay Zeka Hassasiyeti (Threshold)</h3>
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6;">
+                            Değer düştükçe daha katı bir koruma sağlanır, ancak False Positive ihtimali artar.
+                        </p>
+                        <div class="range-container">
+                            <span class="range-label">Daha Güvenli</span>
+                            <div class="range-wrapper">
+                                <input type="range" id="aiThreshold" min="0.1" max="1.0" step="0.05" value="0.75" class="glass-range">
+                                <div class="range-value" id="aiThresholdVal">0.75</div>
+                            </div>
+                            <span class="range-label">Daha Esnek</span>
+                        </div>
+                    </div>
+
+                    <hr class="separator">
+
+                    <!-- Blacklist -->
+                    <div class="settings-group">
+                        <h3 class="settings-title">Yasaklı Kelime Listesi</h3>
+                        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 14px;">
+                            Virgül ile ayırarak veya Enter'a basarak yeni kelime ekleyebilirsiniz.
+                        </p>
+                        <div class="blacklist-input-container">
+                            <div class="tags-wrapper" id="blacklistTags"></div>
+                            <input type="text" id="blacklistInput" placeholder="Yeni kelime ekle ve Enter'a bas..." class="glass-input">
+                        </div>
+                        <div style="margin-top: 20px; display: flex; gap: 12px;">
+                            <button id="addWordBtn" class="btn btn-outline">
+                                <i data-lucide="plus" style="width:15px;height:15px;"></i> Kelime Ekle
+                            </button>
+                            <button id="saveRulesBtn" class="btn btn-primary" style="border-radius: 14px;">
+                                <i data-lucide="save" style="width:15px;height:15px;"></i> Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Settings View -->
+
+            <!-- ════════════════════════════════
+                 LOG DETAIL MODAL
+                 ════════════════════════════════ -->
+            <div id="logDetailModal" class="modal-overlay" style="display: none;">
+                <div class="modal-content glass">
+                    <div class="modal-header">
+                        <button class="btn btn-outline close-modal" id="closeModalBtn" style="padding: 7px 14px; font-size: 0.83rem; border-radius: 14px;">
+                            <i data-lucide="chevron-left" style="width:15px;height:15px;"></i> Geri Dön
+                        </button>
+                        <h2 id="modalLogIdTitle">Log Detayı: #LOG-XXXX</h2>
+                    </div>
+
+                    <div class="modal-grid">
+                        <div class="modal-card">
+                            <h3>Saldırı Bilgileri</h3>
+                            <div class="modal-card-content">
+                                <p><strong>Tarih:</strong> <span id="mdlDate">-</span></p>
+                                <p><strong>Saat:</strong> <span id="mdlTime">-</span></p>
+                                <p><strong>Kullanıcı:</strong> <span id="mdlUser">-</span></p>
+                                <p class="status-row mt-1"><strong>Durum:</strong>&nbsp; <span id="mdlStatus" class="badge badge-lg">-</span></p>
+                                <p class="mt-1"><strong>Bypass Durumu:</strong> <span id="mdlBypassStatus">-</span></p>
+                                <p class="mt-1" style="word-break: break-all;"><strong>Bypass Gerekçesi:</strong> <span id="mdlJustification">-</span></p>
+                            </div>
+                        </div>
+
+                        <div class="modal-card">
+                            <h3>Analiz Edilen İçerik (Prompt)</h3>
+                            <div class="modal-card-content">
+                                <div class="prompt-box" id="mdlPrompt">-</div>
+                                <div id="mdlWarning" class="warning-banner" style="display: none;">
+                                    <i data-lucide="alert-triangle" style="width:15px;height:15px;"></i>
+                                    HASSAS VERİ / TEHDİT TESPİT EDİLDİ
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-card">
+                            <h3>Tespit Katmanı</h3>
+                            <div class="modal-card-content aligned-center">
+                                <p id="mdlLayer" style="font-size: 1.05rem; font-weight: 600; color: var(--primary);">-</p>
+                            </div>
+                        </div>
+
+                        <div class="modal-card">
+                            <h3>Yapay Zeka Kararı</h3>
+                            <div class="modal-card-content">
+                                <div class="progress-wrapper">
+                                    <div class="progress-bg">
+                                        <div class="progress-bar" id="mdlScoreBar" style="width: 0%;"></div>
+                                    </div>
+                                    <span class="progress-text"><span id="mdlScoreText">0</span>%</span>
+                                </div>
+                                <p class="mt-1"><strong>Sınıf:</strong> <span id="mdlCategory">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer" id="modalStandardFooter" style="display: flex;">
+                        <button class="btn success-action" id="btnValidate">
+                            <i data-lucide="check-square" style="width:16px;height:16px;"></i> DOĞRU KARAR (Onayla)
+                        </button>
+                        <button class="btn danger-action" id="btnFalsePositive">
+                            <i data-lucide="x-square" style="width:16px;height:16px;"></i> YANLIŞ POZİTİF (Raporla)
+                        </button>
+                    </div>
+                    <div class="modal-footer" id="modalApprovalFooter" style="display: none; justify-content: flex-end; gap: 10px;">
+                        <button class="btn success-action" id="btnApproveRequest" style="background: var(--success); color: white; border-color: transparent;">
+                            <i data-lucide="check" style="width:16px;height:16px;"></i> Talebi Onayla (ALLOW)
+                        </button>
+                        <button class="btn danger-action" id="btnRejectRequest" style="background: var(--danger); color: white; border-color: transparent;">
+                            <i data-lucide="x" style="width:16px;height:16px;"></i> Talebi Reddet (BLOCK)
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- End Modal -->
+
+            <!-- ════════════════════════════════
+                 PROFILE EDIT MODAL
+                 ════════════════════════════════ -->
+            <div id="profileEditModal" class="modal-overlay" style="display: none;">
+                <div class="modal-content glass" style="max-width: 480px;">
+                    <div class="modal-header">
+                        <h2><i data-lucide="user" style="width:20px;height:20px;color:var(--primary);"></i> Profil Bilgilerini Güncelle</h2>
+                    </div>
+                    <form id="profileEditForm" style="padding: 4px 0; display: flex; flex-direction: column; gap: 16px;">
+                        <div class="form-field">
+                            <label class="form-label">Ad Soyad</label>
+                            <input type="text" id="profFullName" class="form-input">
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">E-Posta</label>
+                            <input type="email" id="profEmail" class="form-input">
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Telefon</label>
+                            <input type="tel" id="profPhone" class="form-input">
+                        </div>
+                        <div class="modal-footer" style="padding-top: 8px;">
+                            <button type="button" class="btn btn-outline" id="btnCancelProfileEdit">İptal</button>
+                            <button type="submit" class="btn btn-primary" style="border-radius: 14px;">Güncelle</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════
+                 PASSWORD CHANGE MODAL
+                 ════════════════════════════════ -->
+            <div id="passwordChangeModal" class="modal-overlay" style="display: none;">
+                <div class="modal-content glass" style="max-width: 480px;">
+                    <div class="modal-header">
+                        <h2><i data-lucide="key" style="width:20px;height:20px;color:var(--primary);"></i> Şifre Değiştir</h2>
+                    </div>
+                    <form id="passwordChangeForm" style="padding: 4px 0; display: flex; flex-direction: column; gap: 16px;">
+                        <div class="form-field">
+                            <label class="form-label">Mevcut Şifre</label>
+                            <input type="password" id="pwdOld" class="form-input" required>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Yeni Şifre</label>
+                            <input type="password" id="pwdNew" class="form-input" required minlength="8">
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Yeni Şifre (Tekrar)</label>
+                            <input type="password" id="pwdNewConfirm" class="form-input" required minlength="8">
+                        </div>
+                        <div class="modal-footer" style="padding-top: 8px;">
+                            <button type="button" class="btn btn-outline" id="btnCancelPasswordChange">İptal</button>
+                            <button type="submit" class="btn btn-primary" style="border-radius: 14px;">Şifreyi Değiştir</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script src="app.js?v=15"></script>
+    <script>
+        // ── INIT THEME BEFORE PAINT ──
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+        lucide.createIcons();
+    </script>
+
+</body>
+
+</html>

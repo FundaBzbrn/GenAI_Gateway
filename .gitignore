@@ -1,0 +1,31 @@
+# ── Ortam ve Gizli Dosyalar ──
+# .env dosyası API anahtarları ve şifreleri içerir, ASLA commit etme!
+.env
+.venv/
+
+# ── Python Önbellek ──
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ── İşletim Sistemi ──
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ── Eğitilmiş Model Dosyaları (çok büyük, Git LFS olmadan taşınamaz) ──
+models/fine_tuned_deberta/
+
+# ── Veritabanı Dosyaları ──
+*.db
+*.sqlite
+
+# ── Demo Kayıtları (büyük video dosyaları) ──
+demo_recordings/
+
+# ── Kişisel / Tez Belgeler ──
+*.pdf
+
+# ── VS Code Ayarları (isteğe bağlı, takım ayarlarını paylaşmak istiyorsan kaldır) ──
+.vscode/.env
